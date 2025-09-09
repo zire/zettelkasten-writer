@@ -1,0 +1,73 @@
+{
+  "sites": {
+    "dsc": {
+      "name": "Digital Sovereignty Chronicle",
+      "description": "Crypto, AI, and digital sovereignty insights",
+      "path": "/Users/zire/github_zire/digital-sovereignty",
+      "url": "https://digitalsovereignty.herbertyang.xyz",
+      "type": "newsletter",
+      "theme": "paper",
+      "author": "Herbert Yang",
+      "content_dir": "content/posts",
+      "date_format": "YYYY/MM/DD-slug",
+      "frontmatter": {
+        "required": ["title", "date", "slug", "categories"],
+        "optional": ["description", "series", "draft"],
+        "defaults": {
+          "draft": true,
+          "categories": ["crypto"]
+        }
+      },
+      "categories": ["crypto", "ai", "blockchain", "web3", "defi", "podcast", "tech", "digital-life"],
+      "series": ["weekly-updates", "deep-dive", "crypto-101"]
+    },
+    "sb": {
+      "name": "The Sunday Blender",
+      "description": "Making news interesting for kids",
+      "path": "/Users/zire/github_zire/sundayblender",
+      "url": "https://weekly.sundayblender.com",
+      "type": "newsletter",
+      "theme": "diary",
+      "author": "Clayton Man",
+      "content_dir": "content/posts",
+      "date_format": "YYYY/MM/MMDD",
+      "frontmatter": {
+        "required": ["title", "date", "description", "tags"],
+        "optional": ["draft", "slug", "featured_image"],
+        "defaults": {
+          "draft": false,
+          "tags": ["news"]
+        }
+      },
+      "categories": ["tech", "global", "economy", "sports", "entertainment", "nature"],
+      "tags": ["facebook", "ai", "nintendo", "china", "education", "rock-n-roll", "apple", "game", "tennis", "cycling", "soccer", "f1-racing"]
+    },
+    "hy": {
+      "name": "Herbert Yang (Personal)",
+      "description": "Personal blog and thoughts",
+      "path": "/Users/zire/github_zire/herbertyang.xyz",
+      "url": "https://herbertyang.xyz",
+      "type": "blog",
+      "theme": "docusaurus",
+      "author": "Herbert Yang",
+      "content_dir": "blog",
+      "date_format": "YYYY-MM-DD-slug",
+      "frontmatter": {
+        "required": ["title", "date", "authors"],
+        "optional": ["tags", "description", "draft"],
+        "defaults": {
+          "draft": false,
+          "authors": ["herbert"]
+        }
+      },
+      "categories": ["personal", "tech", "thoughts", "projects"],
+      "tags": ["life", "coding", "startup", "crypto", "ai"]
+    }
+  },
+  "global": {
+    "editor": "cursor",
+    "timezone": "Asia/Shanghai",
+    "backup_dir": ".session-backups",
+    "templates_dir": "templates"
+  }
+}

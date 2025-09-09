@@ -1,0 +1,63 @@
+{
+  "editor.wordWrap": "on",
+  "editor.lineNumbers": "off",
+  "editor.minimap.enabled": false,
+  "editor.suggest.showFiles": true,
+  "editor.suggest.showFolders": true,
+  
+  "files.associations": {
+    "*.md": "markdown"
+  },
+  
+  "markdown.preview.breaks": true,
+  "markdown.preview.linkify": true,
+  "markdown.suggest.paths.enabled": true,
+  
+  "explorer.fileNesting.enabled": true,
+  "explorer.fileNesting.patterns": {
+    "index.md": "*.webp,*.jpg,*.png,*.gif"
+  },
+  
+  "workbench.editorAssociations": {
+    "*.md": "default"
+  },
+  
+  "workbench.colorTheme": "Quiet Light",
+  "editor.fontFamily": "Georgia, 'Times New Roman', serif",
+  "editor.fontSize": 16,
+  "editor.lineHeight": 1.6,
+  "editor.fontLigatures": false,
+  
+  "workbench.colorCustomizations": {
+    "editor.background": "#fefcf6",
+    "editor.foreground": "#2d2d2d",
+    "editorLineNumber.foreground": "#d0c5b8",
+    "editorLineNumber.activeForeground": "#8b7355",
+    "editor.selectionBackground": "#e8dcc6",
+    "editor.inactiveSelectionBackground": "#f0ede5",
+    "editorWhitespace.foreground": "#f0ede5",
+    "editorCursor.foreground": "#8b7355",
+    "editor.findMatchBackground": "#e8dcc6",
+    "editor.findMatchHighlightBackground": "#f0ede5",
+    "panel.background": "#faf8f1",
+    "sideBar.background": "#f7f5f0",
+    "activityBar.background": "#f7f5f0",
+    "statusBar.background": "#e8dcc6",
+    "statusBar.foreground": "#2d2d2d"
+  },
+  
+  "editor.bracketPairColorization.enabled": false,
+  "editor.guides.bracketPairs": false,
+  "editor.matchBrackets": "never",
+  "editor.renderWhitespace": "none",
+  "editor.renderControlCharacters": false,
+  "editor.hideCursorInOverviewRuler": true,
+  "editor.scrollbar.vertical": "hidden",
+  "editor.scrollbar.horizontal": "hidden",
+  "editor.overviewRulerBorder": false,
+  
+  "workbench.tree.renderIndentGuides": "none",
+  "workbench.activityBar.visible": false,
+  "workbench.statusBar.visible": true,
+  "window.menuBarVisibility": "toggle"
+}
