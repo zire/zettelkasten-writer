@@ -413,7 +413,7 @@ select_draft() {
         if [ -z "$selected_draft" ]; then
             return 1
         fi
-        IFS='|' read -r num title words completion icon post_dir <<< "$selected_draft"
+        IFS='|' read -r num title date word_count icon post_dir <<< "$selected_draft"
         echo "$post_dir/index.md"
         return 0
     else

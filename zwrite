@@ -264,13 +264,21 @@ main_loop() {
                         echo -e "${BLUE}📝 Opening draft $action...${NC}"
                         echo ""
                         
-                        # Get the list of drafts and select the nth one
+                        # Get the list of drafts and select the nth one (site-specific)
                         local drafts=()
-                        while IFS= read -r line; do
-                            if [ -n "$line" ]; then
-                                drafts+=("$line")
-                            fi
-                        done < <(get_dsc_drafts)
+                        if [[ "$current_site" == "dsc" ]]; then
+                            while IFS= read -r line; do
+                                if [ -n "$line" ]; then
+                                    drafts+=("$line")
+                                fi
+                            done < <(get_dsc_drafts)
+                        elif [[ "$current_site" == "sb" ]]; then
+                            while IFS= read -r line; do
+                                if [ -n "$line" ]; then
+                                    drafts+=("$line")
+                                fi
+                            done < <(get_sb_drafts)
+                        fi
                         
                         if [ "$action" -le ${#drafts[@]} ] && [ "$action" -ge 1 ]; then
                             local selected_draft="${drafts[$((action-1))]}"
