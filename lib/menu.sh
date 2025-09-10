@@ -291,7 +291,7 @@ show_action_menu() {
     local site_name="$1"
     local site_code="$2"
     
-    echo -e "${PURPLE}📝 What would you like to do with ${BOLD}$site_name${NC}${PURPLE}?${NC}"
+    echo -e "${PURPLE}📝 What would you like to do with ${CYAN}${BOLD}$site_name${NC}${PURPLE}?${NC}"
     echo ""
     
     # Show current drafts (site-specific)
