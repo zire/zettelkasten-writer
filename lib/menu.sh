@@ -54,38 +54,66 @@ get_dsc_drafts() {
     
     # Find all draft posts and collect with dates for sorting
     local temp_drafts=()
-    while IFS= read -r -d '' file; do
-        if grep -q "draft: true" "$file" 2>/dev/null; then
-            local title=$(grep 'title:' "$file" | sed 's/title: "//' | sed 's/"//' | head -1)
-            local post_dir=$(dirname "$file")
-            local word_count=$(wc -w < "$file" | tr -d ' ')
-            
-            # Get creation date from frontmatter
-            local date_line=$(grep 'date:' "$file" | head -1)
-            local creation_date=$(echo "$date_line" | sed 's/date: //' | cut -d'T' -f1)
-            if [ -z "$creation_date" ]; then
-                creation_date="Unknown"
-            fi
-            
-            # Status icon based on word count
-            local icon="🟡"
-            if [ $word_count -lt 100 ]; then
-                icon="🔴"
-            elif [ $word_count -ge 600 ]; then
-                icon="🟢"
-            fi
-            
-            # Store with date for sorting: "date|title|word_count|icon|post_dir"
-            temp_drafts+=("$creation_date|$title|$word_count|$icon|$post_dir")
+    
+    # Search in both content/posts and drafts folders
+    local search_paths=(
+        "$dsc_path/content/posts"
+        "$dsc_path/drafts"
+    )
+    
+    for search_path in "${search_paths[@]}"; do
+        if [ -d "$search_path" ]; then
+            while IFS= read -r -d '' file; do
+                if grep -q "draft: true" "$file" 2>/dev/null; then
+                    local title=$(grep 'title:' "$file" | sed 's/title: "//' | sed 's/"//' | head -1)
+                    local post_dir=$(dirname "$file")
+                    local word_count=$(wc -w < "$file" | tr -d ' ')
+                    
+                    # Get creation date from frontmatter
+                    local date_line=$(grep 'date:' "$file" | head -1)
+                    local creation_date=$(echo "$date_line" | sed 's/date: //' | cut -d'T' -f1)
+                    if [ -z "$creation_date" ]; then
+                        creation_date="Unknown"
+                    fi
+                    
+                    # Status icon based on word count
+                    local icon="🟡"
+                    if [ $word_count -lt 100 ]; then
+                        icon="🔴"
+                    elif [ $word_count -ge 600 ]; then
+                        icon="🟢"
+                    fi
+                    
+                    # Add location indicator - 💡 for drafts/, 📅 for content/posts/
+                    local location_icon="📅"
+                    if [[ "$post_dir" == *"/drafts/"* ]]; then
+                        location_icon="💡"
+                    fi
+                    
+                    # Check git status for this file
+                    local git_status_icon=""
+                    cd "$dsc_path" || continue
+                    local relative_file="${file#$dsc_path/}"
+                    local git_status=$(git status --porcelain "$relative_file" 2>/dev/null)
+                    
+                    if [ -n "$git_status" ]; then
+                        # File has uncommitted changes
+                        git_status_icon="*"
+                    fi
+                    
+                    # Store with date for sorting: "date|title|word_count|icon|location_icon|git_status_icon|post_dir"
+                    temp_drafts+=("$creation_date|$title|$word_count|$icon|$location_icon|$git_status_icon|$post_dir")
+                fi
+            done < <(find "$search_path" -name "index.md" -print0 2>/dev/null)
         fi
-    done < <(find "$dsc_path/content/posts" -name "index.md" -print0 2>/dev/null)
+    done
     
     # Sort by date (newest first) and add sequential numbers
     count=0
     while IFS= read -r line; do
         count=$((count + 1))
-        IFS='|' read -r date title word_count icon post_dir <<< "$line"
-        drafts+=("$count|$title|$date|$word_count|$icon|$post_dir")
+        IFS='|' read -r date title word_count icon location_icon git_status_icon post_dir <<< "$line"
+        drafts+=("$count|$title|$date|$word_count|$icon|$location_icon|$git_status_icon|$post_dir")
     done < <(printf '%s\n' "${temp_drafts[@]}" | sort -r)
     
     printf '%s\n' "${drafts[@]}"
@@ -311,8 +339,18 @@ show_action_menu() {
         echo -e "${BLUE}📄 Select a draft to edit:${NC}"
         local j=1
         for draft in "${drafts[@]}"; do
-            IFS='|' read -r num title date words icon post_dir <<< "$draft"
-            printf "  ${GREEN}%2d)${NC} %s %s (%s words, created %s)\n" "$j" "$icon" "$title" "$words" "$date"
+            if [[ "$site_code" == "dsc" ]]; then
+                IFS='|' read -r num title date words icon location_icon git_status_icon post_dir <<< "$draft"
+                # Use red color for uncommitted drafts
+                if [ -n "$git_status_icon" ]; then
+                    printf "  ${GREEN}%2d)${NC} %s %s ${RED}${BOLD}%s${NC} ${RED}%s${NC} ${DIM}(%s words, created %s)${NC}\n" "$j" "$location_icon" "$icon" "$title" "$git_status_icon" "$words" "$date"
+                else
+                    printf "  ${GREEN}%2d)${NC} %s %s ${BOLD}%s${NC}%s ${DIM}(%s words, created %s)${NC}\n" "$j" "$location_icon" "$icon" "$title" "$git_status_icon" "$words" "$date"
+                fi
+            else
+                IFS='|' read -r num title date words icon post_dir <<< "$draft"
+                printf "  ${GREEN}%2d)${NC} %s ${BOLD}%s${NC} ${DIM}(%s words, created %s)${NC}\n" "$j" "$icon" "$title" "$words" "$date"
+            fi
             j=$((j + 1))
         done
         echo ""
@@ -342,7 +380,7 @@ show_action_menu() {
             if [ -n "$comp" ]; then
                 IFS='|' read -r num title date words icon post_dir <<< "$comp"
                 local letter="${letters:$letter_idx:1}"
-                printf "  ${GREEN}%s)${NC} %s %s (%s words, created %s)\n" "$letter" "$icon" "$title" "$words" "$date"
+                printf "  ${GREEN}%s)${NC} %s ${BOLD}%s${NC} ${DIM}(%s words, created %s)${NC}\n" "$letter" "$icon" "$title" "$words" "$date"
                 letter_idx=$((letter_idx + 1))
             fi
         done
@@ -356,6 +394,24 @@ show_action_menu() {
     if [ ${#drafts[@]} -gt 0 ]; then
         echo -e "  ${GREEN}d)${NC} Delete draft"
     fi
+    
+    # Check if there are drafts in drafts/ folder (DSC only)
+    if [[ "$site_code" == "dsc" ]]; then
+        local drafts_folder_count=0
+        for draft in "${drafts[@]}"; do
+            if [ -n "$draft" ]; then
+                IFS='|' read -r num title date words icon location_icon git_status_icon post_dir <<< "$draft"
+                if [[ "$location_icon" == "💡" ]]; then
+                    drafts_folder_count=$((drafts_folder_count + 1))
+                fi
+            fi
+        done
+        
+        if [ $drafts_folder_count -gt 0 ]; then
+            echo -e "  ${CYAN}m)${NC} Promote draft to publish"
+        fi
+    fi
+    
     echo -e "  ${YELLOW}b)${NC} Back to site selection"
     echo -e "  ${YELLOW}q)${NC} Quit"
     echo ""
@@ -394,8 +450,18 @@ select_draft() {
     local i=1
     for draft in "${drafts[@]}"; do
         if [ -n "$draft" ]; then
-            IFS='|' read -r orig_num title date words icon post_dir <<< "$draft"
-            printf "  ${GREEN}%2d)${NC} %s %s (%s words, created %s)\n" "$i" "$icon" "$title" "$words" "$date" >&2
+            if [[ "$site_code" == "dsc" ]]; then
+                IFS='|' read -r orig_num title date words icon location_icon git_status_icon post_dir <<< "$draft"
+                # Use red color for uncommitted drafts
+                if [ -n "$git_status_icon" ]; then
+                    printf "  ${GREEN}%2d)${NC} %s %s ${RED}${BOLD}%s${NC} ${RED}%s${NC} ${DIM}(%s words, created %s)${NC}\n" "$i" "$location_icon" "$icon" "$title" "$git_status_icon" "$words" "$date" >&2
+                else
+                    printf "  ${GREEN}%2d)${NC} %s %s ${BOLD}%s${NC}%s ${DIM}(%s words, created %s)${NC}\n" "$i" "$location_icon" "$icon" "$title" "$git_status_icon" "$words" "$date" >&2
+                fi
+            else
+                IFS='|' read -r orig_num title date words icon post_dir <<< "$draft"
+                printf "  ${GREEN}%2d)${NC} %s ${BOLD}%s${NC} ${DIM}(%s words, created %s)${NC}\n" "$i" "$icon" "$title" "$words" "$date" >&2
+            fi
             i=$((i + 1))
         fi
     done
@@ -413,7 +479,11 @@ select_draft() {
         if [ -z "$selected_draft" ]; then
             return 1
         fi
-        IFS='|' read -r num title date word_count icon post_dir <<< "$selected_draft"
+        if [[ "$site_code" == "dsc" ]]; then
+            IFS='|' read -r num title date word_count icon location_icon git_status_icon post_dir <<< "$selected_draft"
+        else
+            IFS='|' read -r num title date word_count icon post_dir <<< "$selected_draft"
+        fi
         echo "$post_dir/index.md"
         return 0
     else
@@ -561,6 +631,101 @@ select_draft_for_deletion() {
     fi
 }
 
+select_draft_for_promotion() {
+    local site_code="$1"
+    # Only works for DSC currently
+    if [[ "$site_code" != "dsc" ]]; then
+        echo -e "${RED}Draft promotion is only available for Digital Sovereignty Chronicle${NC}"
+        return 1
+    fi
+    
+    # Get drafts that are in the drafts/ folder only
+    local dsc_path="/Users/zire/matrix/github_zire/digital-sovereignty"
+    local drafts=()
+    local count=0
+    
+    while IFS= read -r -d '' file; do
+        local post_dir=$(dirname "$file")
+        # Only include drafts from drafts/ folder
+        if [[ "$post_dir" == *"/drafts/"* ]] && grep -q "draft: true" "$file" 2>/dev/null; then
+            local title=$(grep 'title:' "$file" | sed 's/title: "//' | sed 's/"//' | head -1)
+            local word_count=$(wc -w < "$file" | tr -d ' ')
+            
+            local date_line=$(grep 'date:' "$file" | head -1)
+            local creation_date=$(echo "$date_line" | sed 's/date: //' | cut -d'T' -f1)
+            if [ -z "$creation_date" ]; then
+                creation_date="Unknown"
+            fi
+            
+            local icon="🟡"
+            if [ $word_count -lt 100 ]; then
+                icon="🔴"
+            elif [ $word_count -ge 600 ]; then
+                icon="🟢"
+            fi
+            
+            # Check git status for this file
+            local git_status_icon=""
+            cd "$dsc_path" || continue
+            local relative_file="${file#$dsc_path/}"
+            local git_status=$(git status --porcelain "$relative_file" 2>/dev/null)
+            
+            if [ -n "$git_status" ]; then
+                git_status_icon="*"
+            fi
+            
+            count=$((count + 1))
+            drafts+=("$count|$title|$creation_date|$word_count|$icon|💡|$git_status_icon|$post_dir")
+        fi
+    done < <(find "$dsc_path/drafts" -name "index.md" -print0 2>/dev/null)
+    
+    if [ ${#drafts[@]} -eq 0 ]; then
+        echo -e "${YELLOW}No drafts found in drafts/ folder for promotion.${NC}"
+        echo -ne "${BLUE}Press any key to continue...${NC}"
+        read -r
+        return 1
+    fi
+    
+    echo -e "${CYAN}⬆️  Select a draft to promote to content/posts/:${NC}" >&2
+    echo "" >&2
+    local i=1
+    for draft in "${drafts[@]}"; do
+        if [ -n "$draft" ]; then
+            IFS='|' read -r orig_num title date words icon location_icon git_status_icon post_dir <<< "$draft"
+            # Use red color for uncommitted drafts
+            if [ -n "$git_status_icon" ]; then
+                printf "  ${GREEN}%2d)${NC} %s %s ${RED}${BOLD}%s${NC} ${RED}%s${NC} ${DIM}(%s words, created %s)${NC}\n" "$i" "$location_icon" "$icon" "$title" "$git_status_icon" "$words" "$date" >&2
+            else
+                printf "  ${GREEN}%2d)${NC} %s %s ${BOLD}%s${NC}%s ${DIM}(%s words, created %s)${NC}\n" "$i" "$location_icon" "$icon" "$title" "$git_status_icon" "$words" "$date" >&2
+            fi
+            i=$((i + 1))
+        fi
+    done
+    
+    echo -e "  ${YELLOW}b)${NC} Back" >&2
+    echo "" >&2
+    echo -ne "${BLUE}Your choice [1-${#drafts[@]}, b]:${NC} " >&2
+    
+    read -r choice
+    
+    if [[ "$choice" == "b" || "$choice" == "back" ]]; then
+        return 1
+    elif [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -ge 1 ] && [ "$choice" -le ${#drafts[@]} ]; then
+        local selected_draft="${drafts[$((choice-1))]}"
+        if [ -z "$selected_draft" ]; then
+            return 1
+        fi
+        IFS='|' read -r num title date word_count icon location_icon git_status_icon post_dir <<< "$selected_draft"
+        echo "$post_dir"
+        return 0
+    else
+        echo -e "${RED}Invalid selection.${NC}" >&2
+        echo -ne "${BLUE}Press any key to continue...${NC}" >&2
+        read -r
+        return 1
+    fi
+}
+
 # Export functions for use by main script
 export -f show_header
 export -f show_site_menu  
@@ -572,3 +737,4 @@ export -f get_sb_completed
 export -f select_draft
 export -f select_completed
 export -f select_draft_for_deletion
+export -f select_draft_for_promotion

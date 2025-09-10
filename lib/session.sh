@@ -24,7 +24,25 @@ end_writing_session() {
     echo -e "${GREEN}✅ Ready to return to coding environment${NC}"
 }
 
+show_current_article() {
+    local post_file="$1"
+    if [ -f "$post_file" ]; then
+        local title=$(grep 'title:' "$post_file" | sed 's/title: "//' | sed 's/"//' | head -1)
+        local word_count=$(wc -w < "$post_file" | tr -d ' ')
+        echo ""
+        echo -e "${PURPLE}📝 Current Article in Session:${NC}"
+        echo -e "  ${GREEN}Title:${NC} $title"
+        echo -e "  ${GREEN}Word count:${NC} $word_count words"
+        echo -e "  ${GREEN}File:${NC} $post_file"
+    fi
+}
+
 show_session_end_options() {
+    local post_file="$1"
+    
+    # Show current article info
+    show_current_article "$post_file"
+    
     echo ""
     echo -e "${BLUE}💾 Writing session options:${NC}"
     echo -e "  ${GREEN}s)${NC} Save draft progress to git"
@@ -37,4 +55,5 @@ show_session_end_options() {
 
 # Export functions
 export -f end_writing_session
+export -f show_current_article
 export -f show_session_end_options

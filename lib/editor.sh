@@ -87,14 +87,11 @@ open_in_cursor() {
 }
 
 show_writing_session_commands() {
-    echo -e "${PURPLE}📝 Writing Session Commands:${NC}"
+    echo -e "${PURPLE}📝 Writing Session Active${NC}"
     echo ""
-    echo -e "${BLUE}In another terminal window/tab, you can run:${NC}"
-    echo -e "  ${GREEN}./zwrite save${NC}     - Save draft progress to git"
-    echo -e "  ${GREEN}./zwrite publish${NC}  - Publish completed post"
-    echo -e "  ${GREEN}./zwrite status${NC}   - Check all drafts"
+    echo -e "${BLUE}💡 When you're done writing, return to this terminal and use the session options to save or publish.${NC}"
     echo ""
-    echo -e "${YELLOW}💡 Tip: Keep this terminal open for quick commands!${NC}"
+    echo -e "${GREEN}✨ Single-window workflow - no need for multiple terminals!${NC}"
 }
 
 # Export functions
