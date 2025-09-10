@@ -234,9 +234,7 @@ select_draft() {
     for draft in "${drafts[@]}"; do
         if [ -n "$draft" ]; then
             IFS='|' read -r orig_num title date words icon post_dir <<< "$draft"
-            printf "  ${GREEN}%d)${NC} %s ${BOLD}%s${NC}\n" "$i" "$icon" "$title" >&2
-            printf "     ${GRAY}%s words, created %s${NC}\n" "$words" "$date" >&2
-            echo "" >&2
+            printf "  ${GREEN}%2d)${NC} %s %s (%s words, created %s)\n" "$i" "$icon" "$title" "$words" "$date" >&2
             i=$((i + 1))
         fi
     done
@@ -287,9 +285,7 @@ select_completed() {
     for post in "${completed[@]}"; do
         if [ -n "$post" ]; then
             IFS='|' read -r orig_num title date words icon post_dir <<< "$post"
-            printf "  ${GREEN}%d)${NC} %s ${BOLD}%s${NC}\n" "$i" "$icon" "$title" >&2
-            printf "     ${GRAY}%s words, created %s${NC}\n" "$words" "$date" >&2
-            echo "" >&2
+            printf "  ${GREEN}%2d)${NC} %s %s (%s words, created %s)\n" "$i" "$icon" "$title" "$words" "$date" >&2
             i=$((i + 1))
         fi
     done
@@ -340,9 +336,7 @@ select_draft_for_deletion() {
     for draft in "${drafts[@]}"; do
         if [ -n "$draft" ]; then
             IFS='|' read -r orig_num title date words icon post_dir <<< "$draft"
-            printf "  ${GREEN}%d)${NC} %s ${BOLD}%s${NC}\n" "$i" "$icon" "$title" >&2
-            printf "     ${GRAY}%s words, created %s${NC}\n" "$words" "$date" >&2
-            echo "" >&2
+            printf "  ${GREEN}%2d)${NC} %s %s (%s words, created %s)\n" "$i" "$icon" "$title" "$words" "$date" >&2
             i=$((i + 1))
         fi
     done
