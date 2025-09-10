@@ -11,7 +11,7 @@ BLUE='\033[0;34m'
 PURPLE='\033[0;35m'
 NC='\033[0m'
 
-DSC_PATH="/Users/zire/github_zire/digital-sovereignty"
+DSC_PATH="/Users/zire/matrix/github_zire/digital-sovereignty"
 
 save_draft_progress() {
     local post_title="$1"

@@ -3,7 +3,7 @@
     "dsc": {
       "name": "Digital Sovereignty Chronicle",
       "description": "Crypto, AI, and digital sovereignty insights",
-      "path": "/Users/zire/github_zire/digital-sovereignty",
+      "path": "/Users/zire/matrix/github_zire/digital-sovereignty",
       "url": "https://digitalsovereignty.herbertyang.xyz",
       "type": "newsletter",
       "theme": "paper",
@@ -24,7 +24,7 @@
     "sb": {
       "name": "The Sunday Blender",
       "description": "Making news interesting for kids",
-      "path": "/Users/zire/github_zire/sundayblender",
+      "path": "/Users/zire/matrix/github_zire/sundayblender",
       "url": "https://weekly.sundayblender.com",
       "type": "newsletter",
       "theme": "diary",
@@ -45,7 +45,7 @@
     "hy": {
       "name": "Herbert Yang (Personal)",
       "description": "Personal blog and thoughts",
-      "path": "/Users/zire/github_zire/herbertyang.xyz",
+      "path": "/Users/zire/matrix/github_zire/herbertyang.xyz",
       "url": "https://herbertyang.xyz",
       "type": "blog",
       "theme": "docusaurus",
