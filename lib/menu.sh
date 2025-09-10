@@ -48,7 +48,7 @@ show_site_menu() {
 }
 
 get_dsc_drafts() {
-    local dsc_path="/Users/zire/github_zire/digital-sovereignty"
+    local dsc_path="/Users/zire/matrix/github_zire/digital-sovereignty"
     local drafts=()
     local count=0
     
@@ -92,7 +92,7 @@ get_dsc_drafts() {
 }
 
 get_dsc_completed() {
-    local dsc_path="/Users/zire/github_zire/digital-sovereignty"
+    local dsc_path="/Users/zire/matrix/github_zire/digital-sovereignty"
     local completed=()
     local count=0
     
