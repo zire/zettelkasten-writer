@@ -26,11 +26,17 @@ save_draft_progress() {
     # Generate slug from title
     local slug=$(echo "$post_title" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | sed 's/--*/-/g' | sed 's/^-\|-$//g')
     
-    # Find the post file
-    local post_file=$(find "$DSC_PATH/content/posts" -name "index.md" -exec grep -l "slug: $slug" {} \; 2>/dev/null | head -1)
+    # Find the post file - first try by slug in both content/posts and drafts
+    local post_file=$(find "$DSC_PATH/content/posts" "$DSC_PATH/drafts" -name "index.md" -exec grep -l "slug: $slug" {} \; 2>/dev/null | head -1)
+    
+    # If not found by slug, try searching by title
+    if [ -z "$post_file" ]; then
+        post_file=$(find "$DSC_PATH/content/posts" "$DSC_PATH/drafts" -name "index.md" -exec grep -l "title: \"$post_title\"" {} \; 2>/dev/null | head -1)
+    fi
     
     if [ -z "$post_file" ]; then
         echo -e "${RED}❌ Post not found: $post_title${NC}"
+        echo -e "${YELLOW}💡 Searched for slug '$slug' and title '$post_title' in both content/posts and drafts${NC}"
         return 1
     fi
     
@@ -267,8 +273,111 @@ start_preview() {
     hugo server -D --bind 0.0.0.0 --baseURL http://localhost:1313
 }
 
+promote_draft() {
+    local draft_dir="$1"
+    
+    if [ -z "$draft_dir" ] || [ ! -d "$draft_dir" ]; then
+        echo -e "${RED}❌ Invalid draft directory${NC}"
+        return 1
+    fi
+    
+    local draft_file="$draft_dir/index.md"
+    if [ ! -f "$draft_file" ]; then
+        echo -e "${RED}❌ Draft file not found: $draft_file${NC}"
+        return 1
+    fi
+    
+    # Extract title and slug from draft
+    local title=$(grep 'title:' "$draft_file" | sed 's/title: "//' | sed 's/"//' | head -1)
+    local slug=$(grep 'slug:' "$draft_file" | sed 's/slug: //' | head -1)
+    
+    if [ -z "$title" ] || [ -z "$slug" ]; then
+        echo -e "${RED}❌ Could not extract title or slug from draft${NC}"
+        return 1
+    fi
+    
+    echo -e "${CYAN}⬆️  Promoting draft: ${BOLD}$title${NC}"
+    echo ""
+    
+    # Ask for publication date
+    echo -e "${BLUE}📅 Set publication date for this post:${NC}"
+    echo -ne "${BLUE}Enter date (YYYY-MM-DD) or press Enter for today:${NC} "
+    read -r pub_date
+    
+    if [ -z "$pub_date" ]; then
+        pub_date=$(date +%Y-%m-%d)
+    fi
+    
+    # Validate date format
+    if ! date -j -f "%Y-%m-%d" "$pub_date" >/dev/null 2>&1; then
+        echo -e "${RED}❌ Invalid date format. Use YYYY-MM-DD${NC}"
+        return 1
+    fi
+    
+    # Create target directory path
+    local year=$(echo "$pub_date" | cut -d'-' -f1)
+    local month=$(echo "$pub_date" | cut -d'-' -f2)
+    local day=$(echo "$pub_date" | cut -d'-' -f3)
+    local target_dir="$DSC_PATH/content/posts/$year/$month/$day-$slug"
+    
+    # Check if target already exists
+    if [ -d "$target_dir" ]; then
+        echo -e "${RED}❌ Target directory already exists: $target_dir${NC}"
+        return 1
+    fi
+    
+    echo -e "${BLUE}📂 Creating: $target_dir${NC}"
+    mkdir -p "$target_dir"
+    
+    # Update date in frontmatter and set draft: false
+    echo -e "${BLUE}📝 Updating frontmatter...${NC}"
+    sed -i '' "s/^date: .*/date: ${pub_date}T$(date +%H:%M:%S)+00:00/" "$draft_file"
+    sed -i '' 's/^draft: true/draft: false/' "$draft_file"
+    
+    # Copy all files from draft directory to target
+    echo -e "${BLUE}📋 Copying files...${NC}"
+    cp -r "$draft_dir"/* "$target_dir/"
+    
+    # Confirm the move
+    echo ""
+    echo -e "${YELLOW}⚠️  Ready to complete promotion. This will:${NC}"
+    echo -e "  • Move draft from: ${DIM}$draft_dir${NC}"
+    echo -e "  • To publish location: ${DIM}$target_dir${NC}"
+    echo -e "  • Delete original draft folder${NC}"
+    echo ""
+    echo -ne "${BLUE}Continue with promotion? [Y/n]:${NC} "
+    read -r confirm
+    
+    if [[ "$confirm" =~ ^[Nn]$ ]]; then
+        echo -e "${YELLOW}❌ Promotion cancelled. Cleaning up...${NC}"
+        rm -rf "$target_dir"
+        # Revert changes to draft file
+        git checkout -- "$draft_file" 2>/dev/null || true
+        return 1
+    fi
+    
+    # Remove original draft directory
+    echo -e "${BLUE}🗑️  Removing original draft...${NC}"
+    rm -rf "$draft_dir"
+    
+    # Stage the changes but DON'T commit yet - let the user publish when ready
+    echo -e "${BLUE}📚 Staging changes (ready for publish)...${NC}"
+    cd "$DSC_PATH" || return 1
+    
+    git add "$target_dir"
+    git add -u . # Stage deletions
+    
+    echo ""
+    echo -e "${GREEN}✅ Draft promoted successfully!${NC}"
+    echo -e "${PURPLE}📂 New location: $target_dir${NC}"
+    echo -e "${PURPLE}📅 Publication date: $pub_date${NC}"
+    
+    return 0
+}
+
 # Export functions
 export -f save_draft_progress
 export -f publish_post
 export -f delete_draft
 export -f start_preview
+export -f promote_draft
