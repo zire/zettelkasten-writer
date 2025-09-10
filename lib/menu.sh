@@ -33,7 +33,7 @@ show_site_menu() {
     echo -e "  ${GREEN}1)${NC} ${BOLD}Digital Sovereignty Chronicle${NC}"
     echo -e "     ${GRAY}└─ Crypto, AI, and digital sovereignty insights${NC}"
     echo ""
-    echo -e "  ${GRAY}2) The Sunday Blender${NC} ${DIM}(coming soon)${NC}"
+    echo -e "  ${GREEN}2)${NC} ${BOLD}The Sunday Blender${NC}"
     echo -e "     ${GRAY}└─ Making news interesting for kids${NC}"
     echo ""
     echo -e "  ${GRAY}3) Herbert Yang (Personal)${NC} ${DIM}(coming soon)${NC}"
@@ -79,6 +79,50 @@ get_dsc_drafts() {
             temp_drafts+=("$creation_date|$title|$word_count|$icon|$post_dir")
         fi
     done < <(find "$dsc_path/content/posts" -name "index.md" -print0 2>/dev/null)
+    
+    # Sort by date (newest first) and add sequential numbers
+    count=0
+    while IFS= read -r line; do
+        count=$((count + 1))
+        IFS='|' read -r date title word_count icon post_dir <<< "$line"
+        drafts+=("$count|$title|$date|$word_count|$icon|$post_dir")
+    done < <(printf '%s\n' "${temp_drafts[@]}" | sort -r)
+    
+    printf '%s\n' "${drafts[@]}"
+}
+
+get_sb_drafts() {
+    local sb_path="/Users/zire/matrix/github_zire/sundayblender"
+    local drafts=()
+    local count=0
+    
+    # Find all draft posts and collect with dates for sorting
+    local temp_drafts=()
+    while IFS= read -r -d '' file; do
+        if grep -q "draft: true" "$file" 2>/dev/null; then
+            local title=$(grep 'title:' "$file" | sed 's/title: "//' | sed 's/"//' | head -1)
+            local post_dir=$(dirname "$file")
+            local word_count=$(wc -w < "$file" | tr -d ' ')
+            
+            # Get creation date from frontmatter
+            local date_line=$(grep 'date:' "$file" | head -1)
+            local creation_date=$(echo "$date_line" | sed 's/date: //' | cut -d'T' -f1)
+            if [ -z "$creation_date" ]; then
+                creation_date="Unknown"
+            fi
+            
+            # Status icon based on word count (tailored for Sunday Blender's longer posts)
+            local icon="🟡"
+            if [ $word_count -lt 1000 ]; then
+                icon="🔴"
+            elif [ $word_count -ge 2000 ]; then
+                icon="🟢"
+            fi
+            
+            # Store with date for sorting: "date|title|word_count|icon|post_dir"
+            temp_drafts+=("$creation_date|$title|$word_count|$icon|$post_dir")
+        fi
+    done < <(find "$sb_path/content/posts" -name "index.md" -print0 2>/dev/null)
     
     # Sort by date (newest first) and add sequential numbers
     count=0
@@ -167,17 +211,100 @@ get_dsc_completed() {
     fi
 }
 
+get_sb_completed() {
+    local sb_path="/Users/zire/matrix/github_zire/sundayblender"
+    local completed=()
+    local count=0
+    
+    # Get list of files that have changes according to git status
+    local modified_files=()
+    
+    # Get modified/tracked files from git status
+    while IFS= read -r line; do
+        # Parse git status output (format: "XY filename")
+        local status_code="${line:0:2}"
+        local filename="${line:3}"
+        
+        # Check if it's a modified index.md file
+        if [[ "$filename" == *"index.md" && ("$status_code" == " M" || "$status_code" == "MM" || "$status_code" == "M " || "$status_code" == "A ") ]]; then
+            modified_files+=("$sb_path/$filename")
+        fi
+    done < <(cd "$sb_path" && git status --porcelain 2>/dev/null)
+    
+    # Handle untracked directories that contain index.md files
+    while IFS= read -r line; do
+        local status_code="${line:0:2}"
+        local filename="${line:3}"
+        
+        # If it's an untracked directory, check for index.md files inside
+        if [[ "$status_code" == "??" && -d "$sb_path/$filename" ]]; then
+            while IFS= read -r -d '' file; do
+                if [[ "$file" == *"/index.md" ]]; then
+                    modified_files+=("$file")
+                fi
+            done < <(find "$sb_path/$filename" -name "index.md" -print0 2>/dev/null)
+        fi
+    done < <(cd "$sb_path" && git status --porcelain 2>/dev/null)
+    
+    # Check which modified files are marked as draft: false (completed but not published)
+    local temp_completed=()
+    for file in "${modified_files[@]}"; do
+        if [ -f "$file" ] && grep -q "draft: false" "$file" 2>/dev/null; then
+            local title=$(grep 'title:' "$file" | sed 's/title: "//' | sed 's/"//' | head -1)
+            local post_dir=$(dirname "$file")
+            local word_count=$(wc -w < "$file" | tr -d ' ')
+            
+            # Get creation date from frontmatter
+            local date_line=$(grep 'date:' "$file" | head -1)
+            local creation_date=$(echo "$date_line" | sed 's/date: //' | cut -d'T' -f1)
+            if [ -z "$creation_date" ]; then
+                creation_date="Unknown"
+            fi
+            
+            # Green checkmark for completed posts ready to publish
+            local icon="✅"
+            
+            # Store with date for sorting: "date|title|word_count|icon|post_dir"
+            temp_completed+=("$creation_date|$title|$word_count|$icon|$post_dir")
+        fi
+    done
+    
+    # Sort by date (newest first) and add sequential numbers
+    if [ ${#temp_completed[@]} -gt 0 ]; then
+        count=0
+        while IFS= read -r line; do
+            if [ -n "$line" ]; then
+                count=$((count + 1))
+                IFS='|' read -r date title word_count icon post_dir <<< "$line"
+                completed+=("$count|$title|$date|$word_count|$icon|$post_dir")
+            fi
+        done < <(printf '%s\n' "${temp_completed[@]}" | sort -r)
+    fi
+    
+    # Only print if we have actual completed posts
+    if [ ${#completed[@]} -gt 0 ]; then
+        printf '%s\n' "${completed[@]}"
+    fi
+}
+
 show_action_menu() {
     local site_name="$1"
+    local site_code="$2"
     
     echo -e "${PURPLE}📝 What would you like to do with ${BOLD}$site_name${NC}${PURPLE}?${NC}"
     echo ""
     
-    # Show current drafts
+    # Show current drafts (site-specific)
     local drafts=()
-    while IFS= read -r line; do
-        drafts+=("$line")
-    done < <(get_dsc_drafts)
+    if [[ "$site_code" == "dsc" ]]; then
+        while IFS= read -r line; do
+            drafts+=("$line")
+        done < <(get_dsc_drafts)
+    elif [[ "$site_code" == "sb" ]]; then
+        while IFS= read -r line; do
+            drafts+=("$line")
+        done < <(get_sb_drafts)
+    fi
     
     
     if [ ${#drafts[@]} -gt 0 ]; then
@@ -191,13 +318,21 @@ show_action_menu() {
         echo ""
     fi
     
-    # Show completed posts ready for publishing
+    # Show completed posts ready for publishing (site-specific)
     local completed=()
-    while IFS= read -r line; do
-        if [ -n "$line" ]; then
-            completed+=("$line")
-        fi
-    done < <(get_dsc_completed)
+    if [[ "$site_code" == "dsc" ]]; then
+        while IFS= read -r line; do
+            if [ -n "$line" ]; then
+                completed+=("$line")
+            fi
+        done < <(get_dsc_completed)
+    elif [[ "$site_code" == "sb" ]]; then
+        while IFS= read -r line; do
+            if [ -n "$line" ]; then
+                completed+=("$line")
+            fi
+        done < <(get_sb_completed)
+    fi
     
     if [ ${#completed[@]} -gt 0 ]; then
         echo -e "${GREEN}✅ Posts ready to publish:${NC}"
@@ -229,13 +364,22 @@ show_action_menu() {
 
 select_draft() {
     local action="$1" # "edit" or "publish"
-    # Re-get the drafts to ensure we have the current list
+    local site_code="$2" # "dsc" or "sb"
+    # Re-get the drafts to ensure we have the current list (site-specific)
     local drafts=()
-    while IFS= read -r line; do
-        if [ -n "$line" ]; then
-            drafts+=("$line")
-        fi
-    done < <(get_dsc_drafts)
+    if [[ "$site_code" == "dsc" ]]; then
+        while IFS= read -r line; do
+            if [ -n "$line" ]; then
+                drafts+=("$line")
+            fi
+        done < <(get_dsc_drafts)
+    elif [[ "$site_code" == "sb" ]]; then
+        while IFS= read -r line; do
+            if [ -n "$line" ]; then
+                drafts+=("$line")
+            fi
+        done < <(get_sb_drafts)
+    fi
     
     
     if [ ${#drafts[@]} -eq 0 ]; then
@@ -281,13 +425,22 @@ select_draft() {
 }
 
 select_completed() {
-    # Get the list of completed posts ready for publishing
+    local site_code="$1"
+    # Get the list of completed posts ready for publishing (site-specific)
     local completed=()
-    while IFS= read -r line; do
-        if [ -n "$line" ]; then
-            completed+=("$line")
-        fi
-    done < <(get_dsc_completed)
+    if [[ "$site_code" == "dsc" ]]; then
+        while IFS= read -r line; do
+            if [ -n "$line" ]; then
+                completed+=("$line")
+            fi
+        done < <(get_dsc_completed)
+    elif [[ "$site_code" == "sb" ]]; then
+        while IFS= read -r line; do
+            if [ -n "$line" ]; then
+                completed+=("$line")
+            fi
+        done < <(get_sb_completed)
+    fi
     
     if [ ${#completed[@]} -eq 0 ]; then
         echo -e "${YELLOW}No completed posts ready for publishing.${NC}"
@@ -332,13 +485,22 @@ select_completed() {
 }
 
 select_draft_for_deletion() {
-    # Get the list of drafts
+    local site_code="$1"
+    # Get the list of drafts (site-specific)
     local drafts=()
-    while IFS= read -r line; do
-        if [ -n "$line" ]; then
-            drafts+=("$line")
-        fi
-    done < <(get_dsc_drafts)
+    if [[ "$site_code" == "dsc" ]]; then
+        while IFS= read -r line; do
+            if [ -n "$line" ]; then
+                drafts+=("$line")
+            fi
+        done < <(get_dsc_drafts)
+    elif [[ "$site_code" == "sb" ]]; then
+        while IFS= read -r line; do
+            if [ -n "$line" ]; then
+                drafts+=("$line")
+            fi
+        done < <(get_sb_drafts)
+    fi
     
     if [ ${#drafts[@]} -eq 0 ]; then
         echo -e "${YELLOW}No drafts found to delete.${NC}"
@@ -405,6 +567,8 @@ export -f show_site_menu
 export -f show_action_menu
 export -f get_dsc_drafts
 export -f get_dsc_completed
+export -f get_sb_drafts
+export -f get_sb_completed
 export -f select_draft
 export -f select_completed
 export -f select_draft_for_deletion

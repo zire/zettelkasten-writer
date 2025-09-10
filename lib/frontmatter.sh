@@ -1,7 +1,11 @@
 #!/bin/bash
 
 # Zettelkasten Writer - Smart Frontmatter Wizard
-# Focused on Digital Sovereignty Chronicle
+# Multi-site support
+
+# Source previous issues generator for Sunday Blender
+LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$LIB_DIR/previous_issues.sh"
 
 # Colors
 RED='\033[0;31m'
@@ -146,5 +150,136 @@ EOF
     return 0
 }
 
-# Export function
+create_sb_frontmatter() {
+    echo -e "${BLUE}📝 Creating new post for The Sunday Blender${NC}"
+    echo ""
+    
+    # Title
+    printf "${GREEN}Title:${NC} "
+    read -r title
+    if [ -z "$title" ]; then
+        echo -e "${RED}Title is required.${NC}"
+        return 1
+    fi
+    
+    # Generate slug from title  
+    local slug=$(echo "$title" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | sed 's/--*/-/g' | sed 's/^-\|-$//g')
+    printf "${GREEN}Slug${NC} ${GRAY}(auto-generated):${NC} $slug ${GRAY}[Enter to accept, or type new]:${NC} "
+    read -r custom_slug
+    if [ -n "$custom_slug" ]; then
+        slug="$custom_slug"
+    fi
+    
+    # Date (for Saturday publication)
+    printf "${GREEN}Date${NC} ${GRAY}(YYYY-MM-DD format, or Enter for today):${NC} "
+    read -r input_date
+    
+    if [ -z "$input_date" ]; then
+        current_date=$(date +"%Y-%m-%d")
+    else
+        # Validate YYYY-MM-DD format and show day of week
+        if date -j -f "%Y-%m-%d" "$input_date" "+%A, %B %d, %Y" >/dev/null 2>&1; then
+            local day_info=$(date -j -f "%Y-%m-%d" "$input_date" "+%A, %B %d, %Y")
+            echo -e "${BLUE}Publishing on: $day_info${NC}"
+            current_date="$input_date"
+        else
+            echo -e "${RED}Invalid date format. Using today.${NC}"
+            current_date=$(date +"%Y-%m-%d")
+        fi
+    fi
+    
+    # Description (optional for SB)
+    printf "${GREEN}Description${NC} ${GRAY}(brief summary, optional):${NC} "
+    read -r description
+    
+    # Tags (manual entry)
+    echo ""
+    printf "${GREEN}Tags${NC} ${GRAY}(comma-separated, default: news):${NC} "
+    read -r tags
+    if [ -z "$tags" ]; then
+        tags="news"
+    fi
+    
+    # Generate directory structure (SB uses YYYY/MM/MMDD format)
+    local current_year=$(date +%Y)
+    local current_month=$(date +%m) 
+    local current_day=$(date +%d)
+    local post_dir="/Users/zire/matrix/github_zire/sundayblender/content/posts/$current_year/$current_month/$current_month$current_day-$slug"
+    
+    # Check if directory exists
+    if [ -d "$post_dir" ]; then
+        echo -e "${YELLOW}⚠️  Directory already exists: $post_dir${NC}"
+        printf "${BLUE}Continue anyway? [y/N]:${NC} "
+        read -r continue_choice
+        if [[ ! "$continue_choice" =~ ^[Yy]$ ]]; then
+            return 1
+        fi
+    fi
+    
+    # Create directory
+    mkdir -p "$post_dir"
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}❌ Failed to create directory: $post_dir${NC}"
+        return 1
+    fi
+    
+    # Create the post file
+    local post_file="$post_dir/index.md"
+    
+    # Generate frontmatter and content with Previous Issues
+    local previous_issues_content=$(generate_previous_issues)
+    
+    cat > "$post_file" << POSTEOF
+---
+title: "$title"
+date: $current_date
+slug: $slug
+description: "$description"
+tags: [$tags]
+draft: true
+---
+
+![Hero Image]()
+
+## Tech
+
+## Global
+
+## Economy & Finance
+
+## Nature & Environment
+
+## Lifestyle, Entertainment & Culture
+
+## Sports
+
+## This Day in History
+
+## Art of the Week
+
+## Funny
+$previous_issues_content
+
+---
+
+Thanks for reading! If you enjoy this newsletter, please share it with friends who might also find it interesting and refreshing, if not for themselves, at least for their kids.
+
+POSTEOF
+    
+    echo -e "${GREEN}✅ Post created successfully!${NC}"
+    echo -e "${BLUE}📁 Location: $post_dir${NC}"
+    echo ""
+    echo -e "${GRAY}Next steps:${NC}"
+    echo -e "  1. Write your content in the editor"
+    echo -e "  2. Set ${YELLOW}draft: false${NC} when ready to publish"
+    echo -e "  3. Preview: cd $post_dir && hugo server -D"
+    echo -e "  4. Publish when ready"
+    
+    # Return the post file path for opening in editor
+    POST_FILE_RESULT="$post_file"
+    return 0
+}
+
+# Export functions
 export -f create_dsc_frontmatter
+export -f create_sb_frontmatter
