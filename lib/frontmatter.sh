@@ -3,6 +3,10 @@
 # Zettelkasten Writer - Smart Frontmatter Wizard
 # Multi-site support
 
+# Source previous issues generator for Sunday Blender
+LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$LIB_DIR/previous_issues.sh"
+
 # Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -212,7 +216,9 @@ create_sb_frontmatter() {
     # Create the post file
     local post_file="$post_dir/index.md"
     
-    # Generate frontmatter and content
+    # Generate frontmatter and content with Previous Issues
+    local previous_issues_content=$(generate_previous_issues)
+    
     cat > "$post_file" << POSTEOF
 ---
 title: "$title"
@@ -242,6 +248,7 @@ draft: true
 ## Art of the Week
 
 ## Funny
+$previous_issues_content
 
 ---
 
