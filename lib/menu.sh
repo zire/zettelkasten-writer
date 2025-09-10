@@ -96,16 +96,33 @@ get_dsc_completed() {
     local completed=()
     local count=0
     
-    # Get list of modified index.md files from git status
+    # Get list of files that have changes according to git status
     local modified_files=()
+    
+    # Get modified/tracked files from git status
     while IFS= read -r line; do
         # Parse git status output (format: "XY filename")
         local status_code="${line:0:2}"
         local filename="${line:3}"
         
         # Check if it's a modified index.md file
-        if [[ "$filename" == *"index.md" && ("$status_code" == " M" || "$status_code" == "MM" || "$status_code" == "M ") ]]; then
+        if [[ "$filename" == *"index.md" && ("$status_code" == " M" || "$status_code" == "MM" || "$status_code" == "M " || "$status_code" == "A ") ]]; then
             modified_files+=("$dsc_path/$filename")
+        fi
+    done < <(cd "$dsc_path" && git status --porcelain 2>/dev/null)
+    
+    # Handle untracked directories that contain index.md files
+    while IFS= read -r line; do
+        local status_code="${line:0:2}"
+        local filename="${line:3}"
+        
+        # If it's an untracked directory, check for index.md files inside
+        if [[ "$status_code" == "??" && -d "$dsc_path/$filename" ]]; then
+            while IFS= read -r -d '' file; do
+                if [[ "$file" == *"/index.md" ]]; then
+                    modified_files+=("$file")
+                fi
+            done < <(find "$dsc_path/$filename" -name "index.md" -print0 2>/dev/null)
         fi
     done < <(cd "$dsc_path" && git status --porcelain 2>/dev/null)
     
