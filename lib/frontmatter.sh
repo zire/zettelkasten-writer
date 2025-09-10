@@ -18,7 +18,7 @@ create_dsc_frontmatter() {
     echo ""
     
     # Title
-    echo -ne "${GREEN}Title:${NC} "
+    printf "${GREEN}Title:${NC} "
     read -r title
     if [ -z "$title" ]; then
         echo -e "${RED}Title is required.${NC}"
@@ -27,7 +27,7 @@ create_dsc_frontmatter() {
     
     # Generate slug from title
     local slug=$(echo "$title" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | sed 's/--*/-/g' | sed 's/^-\|-$//g')
-    echo -ne "${GREEN}Slug${NC} ${GRAY}(auto-generated):${NC} $slug ${GRAY}[Enter to accept, or type new]:${NC} "
+    printf "${GREEN}Slug${NC} ${GRAY}(auto-generated):${NC} $slug ${GRAY}[Enter to accept, or type new]:${NC} "
     read -r custom_slug
     if [ -n "$custom_slug" ]; then
         slug="$custom_slug"
@@ -35,14 +35,14 @@ create_dsc_frontmatter() {
     
     # Date (default to now)
     local current_date=$(date -u +"%Y-%m-%dT%H:%M:%S+00:00")
-    echo -ne "${GREEN}Date${NC} ${GRAY}(default: now):${NC} $current_date ${GRAY}[Enter to accept, or type new]:${NC} "
+    printf "${GREEN}Date${NC} ${GRAY}(default: now):${NC} $current_date ${GRAY}[Enter to accept, or type new]:${NC} "
     read -r custom_date
     if [ -n "$custom_date" ]; then
         current_date="$custom_date"
     fi
     
     # Description
-    echo -ne "${GREEN}Description${NC} ${GRAY}(brief summary):${NC} "
+    printf "${GREEN}Description${NC} ${GRAY}(brief summary):${NC} "
     read -r description
     if [ -z "$description" ]; then
         description="Brief description of the post"
@@ -52,7 +52,7 @@ create_dsc_frontmatter() {
     echo -e "${GREEN}Category${NC} ${GRAY}(choose from common options):${NC}"
     echo -e "  1) crypto    2) ai         3) blockchain   4) web3"
     echo -e "  5) defi      6) podcast    7) tech         8) digital-life"
-    echo -ne "${GREEN}Choice [1-8] or type custom:${NC} "
+    printf "${GREEN}Choice [1-8] or type custom:${NC} "
     read -r cat_choice
     
     local category="crypto" # default
@@ -82,7 +82,7 @@ create_dsc_frontmatter() {
     # Check if directory exists
     if [ -d "$post_dir" ]; then
         echo -e "${YELLOW}⚠️  Directory already exists: $post_dir${NC}"
-        echo -ne "${BLUE}Continue anyway? [y/N]:${NC} "
+        printf "${BLUE}Continue anyway? [y/N]:${NC} "
         read -r confirm
         if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
             return 1
@@ -142,7 +142,7 @@ EOF
     echo -e "  4. Publish when ready"
     
     # Return the post file path for opening in editor
-    echo "$post_file"
+    POST_FILE_RESULT="$post_file"
     return 0
 }
 

@@ -107,7 +107,8 @@ main_loop() {
                     echo ""
                     
                     # Create new post with frontmatter wizard
-                    if post_file=$(create_dsc_frontmatter); then
+                    if create_dsc_frontmatter; then
+                        post_file="$POST_FILE_RESULT"
                         echo ""
                         echo -ne "${PURPLE}Open in Cursor now? [Y/n]:${NC} "
                         read -r open_choice
