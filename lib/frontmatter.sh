@@ -170,12 +170,22 @@ create_sb_frontmatter() {
         slug="$custom_slug"
     fi
     
-    # Date (default to now)
-    local current_date=$(date -u +"%Y-%m-%dT%H:%M:%S+00:00")
-    printf "${GREEN}Date${NC} ${GRAY}(default: now):${NC} $current_date ${GRAY}[Enter to accept, or type new]:${NC} "
-    read -r custom_date
-    if [ -n "$custom_date" ]; then
-        current_date="$custom_date"
+    # Date (for Saturday publication)
+    printf "${GREEN}Date${NC} ${GRAY}(YYYY-MM-DD format, or Enter for today):${NC} "
+    read -r input_date
+    
+    if [ -z "$input_date" ]; then
+        current_date=$(date +"%Y-%m-%d")
+    else
+        # Validate YYYY-MM-DD format and show day of week
+        if date -j -f "%Y-%m-%d" "$input_date" "+%A, %B %d, %Y" >/dev/null 2>&1; then
+            local day_info=$(date -j -f "%Y-%m-%d" "$input_date" "+%A, %B %d, %Y")
+            echo -e "${BLUE}Publishing on: $day_info${NC}"
+            current_date="$input_date"
+        else
+            echo -e "${RED}Invalid date format. Using today.${NC}"
+            current_date=$(date +"%Y-%m-%d")
+        fi
     fi
     
     # Description (optional for SB)
