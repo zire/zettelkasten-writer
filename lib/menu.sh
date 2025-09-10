@@ -291,7 +291,7 @@ show_action_menu() {
     local site_name="$1"
     local site_code="$2"
     
-    echo -e "${PURPLE}📝 What would you like to do with ${BOLD}$site_name${NC}${PURPLE}?${NC}"
+    echo -e "${PURPLE}📝 What would you like to do with ${CYAN}${BOLD}$site_name${NC}${PURPLE}?${NC}"
     echo ""
     
     # Show current drafts (site-specific)
@@ -413,7 +413,7 @@ select_draft() {
         if [ -z "$selected_draft" ]; then
             return 1
         fi
-        IFS='|' read -r num title words completion icon post_dir <<< "$selected_draft"
+        IFS='|' read -r num title date word_count icon post_dir <<< "$selected_draft"
         echo "$post_dir/index.md"
         return 0
     else

@@ -47,6 +47,12 @@ open_in_cursor() {
             osascript -e 'tell application "System Events" to keystroke "e" using {command down, shift down}' 2>/dev/null || true
             sleep 1
             
+            # Enter Zen mode to hide line numbers and distractions (Cmd+R Z)
+            osascript -e 'tell application "System Events" to keystroke "r" using {command down}' 2>/dev/null || true
+            sleep 0.5
+            osascript -e 'tell application "System Events" to keystroke "z"' 2>/dev/null || true
+            sleep 1
+            
             # Split editor right (Cmd+\)
             osascript -e 'tell application "System Events" to keystroke "\\" using {command down}' 2>/dev/null || true
             sleep 1
@@ -66,6 +72,7 @@ open_in_cursor() {
     
     echo ""
     echo -e "${PURPLE}📋 Writing environment ready:${NC}"
+    echo -e "  • Zen mode enabled (no line numbers, minimal UI)"
     echo -e "  • Editor on left, preview on right"
     echo -e "  • Explorer panel hidden for focus"
     echo -e "  • 💡 Close the redundant index.md tab in right pane"

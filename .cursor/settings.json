@@ -9,6 +9,7 @@
     "*.md": "markdown"
   },
   
+  
   "markdown.preview.breaks": true,
   "markdown.preview.linkify": true,
   "markdown.suggest.paths.enabled": true,

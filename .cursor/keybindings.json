@@ -1,0 +1,14 @@
+[
+  {
+    "key": "cmd+b",
+    "command": "-workbench.action.toggleSidebarVisibility"
+  },
+  {
+    "key": "cmd+b",
+    "command": "editor.action.insertSnippet",
+    "when": "editorTextFocus && editorLangId == markdown",
+    "args": {
+      "snippet": "**${TM_SELECTED_TEXT:$0}**"
+    }
+  }
+]
