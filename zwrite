@@ -140,7 +140,11 @@ main_loop() {
                     current_site="sb"
                     site_name="The Sunday Blender"
                     ;;
-                3|4)
+                3)
+                    current_site="hy"
+                    site_name="Herbert Yang (Personal)"
+                    ;;
+                4)
                     echo -e "${YELLOW}⚠️  This site is coming soon!${NC}"
                     echo -ne "${BLUE}Press any key to continue...${NC}"
                     read -r
@@ -172,6 +176,8 @@ main_loop() {
                         create_dsc_frontmatter
                     elif [[ "$current_site" == "sb" ]]; then
                         create_sb_frontmatter
+                    elif [[ "$current_site" == "hy" ]]; then
+                        create_hy_frontmatter
                     else
                         echo -e "${RED}❌ Unsupported site: $current_site${NC}"
                         continue

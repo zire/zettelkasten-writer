@@ -36,7 +36,7 @@ show_site_menu() {
     echo -e "  ${GREEN}2)${NC} ${BOLD}The Sunday Blender${NC}"
     echo -e "     ${GRAY}└─ Making news interesting for kids${NC}"
     echo ""
-    echo -e "  ${GRAY}3) Herbert Yang (Personal)${NC} ${DIM}(coming soon)${NC}"
+    echo -e "  ${GREEN}3)${NC} ${BOLD}Herbert Yang (Personal)${NC}"
     echo -e "     ${GRAY}└─ Personal blog and thoughts${NC}"
     echo ""
     echo -e "  ${GRAY}4) Remnants of Globalization${NC} ${DIM}(coming soon)${NC}"
@@ -315,6 +315,120 @@ get_sb_completed() {
     fi
 }
 
+get_hy_drafts() {
+    local hy_path="/Users/zire/matrix/github_zire/herbertyang.xyz"
+    local drafts=()
+    local count=0
+    
+    # Find all draft posts and collect with dates for sorting
+    local temp_drafts=()
+    while IFS= read -r -d '' file; do
+        if grep -q "draft: true" "$file" 2>/dev/null; then
+            local title=$(grep 'title:' "$file" | sed 's/title: "//' | sed 's/"//' | head -1)
+            local word_count=$(wc -w < "$file" | tr -d ' ')
+            
+            # Get creation date from frontmatter
+            local date_line=$(grep 'date:' "$file" | head -1)
+            local creation_date=$(echo "$date_line" | sed 's/date: //' | cut -d'T' -f1)
+            if [ -z "$creation_date" ]; then
+                creation_date="Unknown"
+            fi
+            
+            # Status icon based on word count (tailored for personal blog posts)
+            local icon="🟡"
+            if [ $word_count -lt 200 ]; then
+                icon="🔴"
+            elif [ $word_count -ge 800 ]; then
+                icon="🟢"
+            fi
+            
+            # Store with date for sorting: "date|title|word_count|icon|file_path"
+            temp_drafts+=("$creation_date|$title|$word_count|$icon|$file")
+        fi
+    done < <(find "$hy_path/blog" -name "*.md" -print0 2>/dev/null)
+    
+    # Sort by date (newest first) and add sequential numbers
+    count=0
+    while IFS= read -r line; do
+        count=$((count + 1))
+        IFS='|' read -r date title word_count icon post_dir <<< "$line"
+        drafts+=("$count|$title|$date|$word_count|$icon|$post_dir")
+    done < <(printf '%s\n' "${temp_drafts[@]}" | sort -r)
+    
+    printf '%s\n' "${drafts[@]}"
+}
+
+get_hy_completed() {
+    local hy_path="/Users/zire/matrix/github_zire/herbertyang.xyz"
+    local completed=()
+    local count=0
+    
+    # Get list of files that have changes according to git status
+    local modified_files=()
+    
+    # Get modified/tracked files from git status
+    while IFS= read -r line; do
+        # Parse git status output (format: "XY filename")
+        local status_code="${line:0:2}"
+        local filename="${line:3}"
+        
+        # Check if it's a modified .md file in blog directory
+        if [[ "$filename" == blog/*.md && ("$status_code" == " M" || "$status_code" == "MM" || "$status_code" == "M " || "$status_code" == "A ") ]]; then
+            modified_files+=("$hy_path/$filename")
+        fi
+    done < <(cd "$hy_path" && git status --porcelain 2>/dev/null)
+    
+    # Handle untracked .md files
+    while IFS= read -r line; do
+        local status_code="${line:0:2}"
+        local filename="${line:3}"
+        
+        # If it's an untracked .md file in blog directory
+        if [[ "$status_code" == "??" && "$filename" == blog/*.md ]]; then
+            modified_files+=("$hy_path/$filename")
+        fi
+    done < <(cd "$hy_path" && git status --porcelain 2>/dev/null)
+    
+    # Check which modified files are marked as draft: false (completed but not published)
+    local temp_completed=()
+    for file in "${modified_files[@]}"; do
+        if [ -f "$file" ] && grep -q "draft: false" "$file" 2>/dev/null; then
+            local title=$(grep 'title:' "$file" | sed 's/title: "//' | sed 's/"//' | head -1)
+            local word_count=$(wc -w < "$file" | tr -d ' ')
+            
+            # Get creation date from frontmatter
+            local date_line=$(grep 'date:' "$file" | head -1)
+            local creation_date=$(echo "$date_line" | sed 's/date: //' | cut -d'T' -f1)
+            if [ -z "$creation_date" ]; then
+                creation_date="Unknown"
+            fi
+            
+            # Green checkmark for completed posts ready to publish
+            local icon="✅"
+            
+            # Store with date for sorting: "date|title|word_count|icon|file_path"
+            temp_completed+=("$creation_date|$title|$word_count|$icon|$file")
+        fi
+    done
+    
+    # Sort by date (newest first) and add sequential numbers
+    if [ ${#temp_completed[@]} -gt 0 ]; then
+        count=0
+        while IFS= read -r line; do
+            if [ -n "$line" ]; then
+                count=$((count + 1))
+                IFS='|' read -r date title word_count icon file_path <<< "$line"
+                completed+=("$count|$title|$date|$word_count|$icon|$file_path")
+            fi
+        done < <(printf '%s\n' "${temp_completed[@]}" | sort -r)
+    fi
+    
+    # Only print if we have actual completed posts
+    if [ ${#completed[@]} -gt 0 ]; then
+        printf '%s\n' "${completed[@]}"
+    fi
+}
+
 show_action_menu() {
     local site_name="$1"
     local site_code="$2"
@@ -332,6 +446,10 @@ show_action_menu() {
         while IFS= read -r line; do
             drafts+=("$line")
         done < <(get_sb_drafts)
+    elif [[ "$site_code" == "hy" ]]; then
+        while IFS= read -r line; do
+            drafts+=("$line")
+        done < <(get_hy_drafts)
     fi
     
     
@@ -347,7 +465,7 @@ show_action_menu() {
                 else
                     printf "  ${GREEN}%2d)${NC} %s %s ${BOLD}%s${NC}%s ${DIM}(%s words, created %s)${NC}\n" "$j" "$location_icon" "$icon" "$title" "$git_status_icon" "$words" "$date"
                 fi
-            else
+            elif [[ "$site_code" == "sb" || "$site_code" == "hy" ]]; then
                 IFS='|' read -r num title date words icon post_dir <<< "$draft"
                 printf "  ${GREEN}%2d)${NC} %s ${BOLD}%s${NC} ${DIM}(%s words, created %s)${NC}\n" "$j" "$icon" "$title" "$words" "$date"
             fi
@@ -370,6 +488,12 @@ show_action_menu() {
                 completed+=("$line")
             fi
         done < <(get_sb_completed)
+    elif [[ "$site_code" == "hy" ]]; then
+        while IFS= read -r line; do
+            if [ -n "$line" ]; then
+                completed+=("$line")
+            fi
+        done < <(get_hy_completed)
     fi
     
     if [ ${#completed[@]} -gt 0 ]; then
@@ -420,7 +544,7 @@ show_action_menu() {
 
 select_draft() {
     local action="$1" # "edit" or "publish"
-    local site_code="$2" # "dsc" or "sb"
+    local site_code="$2" # "dsc", "sb", or "hy"
     # Re-get the drafts to ensure we have the current list (site-specific)
     local drafts=()
     if [[ "$site_code" == "dsc" ]]; then
@@ -435,6 +559,12 @@ select_draft() {
                 drafts+=("$line")
             fi
         done < <(get_sb_drafts)
+    elif [[ "$site_code" == "hy" ]]; then
+        while IFS= read -r line; do
+            if [ -n "$line" ]; then
+                drafts+=("$line")
+            fi
+        done < <(get_hy_drafts)
     fi
     
     
@@ -458,7 +588,7 @@ select_draft() {
                 else
                     printf "  ${GREEN}%2d)${NC} %s %s ${BOLD}%s${NC}%s ${DIM}(%s words, created %s)${NC}\n" "$i" "$location_icon" "$icon" "$title" "$git_status_icon" "$words" "$date" >&2
                 fi
-            else
+            elif [[ "$site_code" == "sb" || "$site_code" == "hy" ]]; then
                 IFS='|' read -r orig_num title date words icon post_dir <<< "$draft"
                 printf "  ${GREEN}%2d)${NC} %s ${BOLD}%s${NC} ${DIM}(%s words, created %s)${NC}\n" "$i" "$icon" "$title" "$words" "$date" >&2
             fi
@@ -481,10 +611,15 @@ select_draft() {
         fi
         if [[ "$site_code" == "dsc" ]]; then
             IFS='|' read -r num title date word_count icon location_icon git_status_icon post_dir <<< "$selected_draft"
-        else
+            echo "$post_dir/index.md"
+        elif [[ "$site_code" == "sb" ]]; then
             IFS='|' read -r num title date word_count icon post_dir <<< "$selected_draft"
+            echo "$post_dir/index.md"
+        elif [[ "$site_code" == "hy" ]]; then
+            IFS='|' read -r num title date word_count icon post_dir <<< "$selected_draft"
+            # For HY site, the post_dir already contains the .md file path
+            echo "$post_dir"
         fi
-        echo "$post_dir/index.md"
         return 0
     else
         echo -e "${RED}Invalid selection.${NC}" >&2
@@ -510,6 +645,12 @@ select_completed() {
                 completed+=("$line")
             fi
         done < <(get_sb_completed)
+    elif [[ "$site_code" == "hy" ]]; then
+        while IFS= read -r line; do
+            if [ -n "$line" ]; then
+                completed+=("$line")
+            fi
+        done < <(get_hy_completed)
     fi
     
     if [ ${#completed[@]} -eq 0 ]; then
@@ -543,8 +684,13 @@ select_completed() {
         if [ -z "$selected_post" ]; then
             return 1
         fi
-        IFS='|' read -r num title date words icon post_dir <<< "$selected_post"
-        echo "$post_dir/index.md"
+        if [[ "$site_code" == "hy" ]]; then
+            IFS='|' read -r num title date words icon file_path <<< "$selected_post"
+            echo "$file_path"
+        else
+            IFS='|' read -r num title date words icon post_dir <<< "$selected_post"
+            echo "$post_dir/index.md"
+        fi
         return 0
     else
         echo -e "${RED}Invalid selection.${NC}" >&2
@@ -570,6 +716,12 @@ select_draft_for_deletion() {
                 drafts+=("$line")
             fi
         done < <(get_sb_drafts)
+    elif [[ "$site_code" == "hy" ]]; then
+        while IFS= read -r line; do
+            if [ -n "$line" ]; then
+                drafts+=("$line")
+            fi
+        done < <(get_hy_drafts)
     fi
     
     if [ ${#drafts[@]} -eq 0 ]; then
@@ -603,19 +755,28 @@ select_draft_for_deletion() {
         if [ -z "$selected_draft" ]; then
             return 1
         fi
-        IFS='|' read -r num title date words icon post_dir <<< "$selected_draft"
+        if [[ "$site_code" == "dsc" ]]; then
+            IFS='|' read -r num title date words icon location_icon git_status_icon post_dir <<< "$selected_draft"
+            local path_to_delete="$post_dir"
+        elif [[ "$site_code" == "hy" ]]; then
+            IFS='|' read -r num title date words icon file_path <<< "$selected_draft"
+            local path_to_delete="$file_path"
+        else
+            IFS='|' read -r num title date words icon post_dir <<< "$selected_draft"
+            local path_to_delete="$post_dir"
+        fi
         
         # Confirmation prompt
         echo "" >&2
         echo -e "${RED}⚠️  Are you sure you want to DELETE this draft?${NC}" >&2
         echo -e "     ${BOLD}Title:${NC} $title" >&2
-        echo -e "     ${BOLD}Path:${NC} $post_dir" >&2
+        echo -e "     ${BOLD}Path:${NC} $path_to_delete" >&2
         echo "" >&2
         echo -ne "${RED}Type 'DELETE' to confirm (or anything else to cancel):${NC} " >&2
         read -r confirm
         
         if [[ "$confirm" == "DELETE" ]]; then
-            echo "$post_dir"
+            echo "$path_to_delete"
             return 0
         else
             echo -e "${BLUE}Deletion cancelled.${NC}" >&2
@@ -734,6 +895,8 @@ export -f get_dsc_drafts
 export -f get_dsc_completed
 export -f get_sb_drafts
 export -f get_sb_completed
+export -f get_hy_drafts
+export -f get_hy_completed
 export -f select_draft
 export -f select_completed
 export -f select_draft_for_deletion
