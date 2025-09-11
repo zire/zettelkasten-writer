@@ -345,7 +345,6 @@ create_hy_frontmatter() {
 ---
 title: $title
 date: $current_date
-authors: [herbert]
 tags: [$tag_array]
 draft: true
 EOF
@@ -360,15 +359,11 @@ EOF
     cat >> "$post_file" << EOF
 ---
 
-## Introduction
 
-## Main Content
-
-## Conclusion
 
 ---
 
-*Originally published on [herbertyang.xyz](https://herbertyang.xyz)*
+*Originally published on [herbertyang.xyz/blog](https://herbertyang.xyz/blog)*
 EOF
     
     echo ""
