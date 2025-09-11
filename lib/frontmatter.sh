@@ -77,6 +77,10 @@ create_dsc_frontmatter() {
     echo -e "${GREEN}Series${NC} ${GRAY}(optional - common: weekly-updates, deep-dive, crypto-101):${NC} "
     read -r series
     
+    # Keywords (optional for SEO)
+    printf "${GREEN}Keywords${NC} ${GRAY}(optional, comma-separated for SEO - can be added later):${NC} "
+    read -r keywords
+    
     # Generate directory structure
     local current_year=$(date +%Y)
     local current_month=$(date +%m) 
@@ -114,6 +118,28 @@ EOF
         cat >> "$post_file" << EOF
 series:
   - "$series"
+EOF
+    fi
+    
+    # Process and add keywords (always include field, even if empty)
+    if [ -n "$keywords" ]; then
+        # Convert comma-separated keywords to YAML array format
+        local keyword_array=""
+        IFS=',' read -ra keyword_list <<< "$keywords"
+        for keyword in "${keyword_list[@]}"; do
+            keyword=$(echo "$keyword" | sed 's/^[ \t]*//;s/[ \t]*$//')  # trim whitespace
+            if [ -n "$keyword_array" ]; then
+                keyword_array="${keyword_array}, \"$keyword\""
+            else
+                keyword_array="\"$keyword\""
+            fi
+        done
+        cat >> "$post_file" << EOF
+keywords: [$keyword_array]
+EOF
+    else
+        cat >> "$post_file" << EOF
+keywords: []
 EOF
     fi
     
@@ -200,6 +226,10 @@ create_sb_frontmatter() {
         tags="news"
     fi
     
+    # Keywords (optional for SEO)
+    printf "${GREEN}Keywords${NC} ${GRAY}(optional, comma-separated for SEO - can be added later):${NC} "
+    read -r keywords
+    
     # Generate directory structure (SB uses YYYY/MM/MMDD format)
     local current_year=$(date +%Y)
     local current_month=$(date +%m) 
@@ -229,6 +259,25 @@ create_sb_frontmatter() {
     # Generate frontmatter and content with Previous Issues
     local previous_issues_content=$(generate_previous_issues)
     
+    # Process keywords for frontmatter
+    local keyword_field=""
+    if [ -n "$keywords" ]; then
+        # Convert comma-separated keywords to proper array format
+        local keyword_array=""
+        IFS=',' read -ra keyword_list <<< "$keywords"
+        for keyword in "${keyword_list[@]}"; do
+            keyword=$(echo "$keyword" | sed 's/^[ \t]*//;s/[ \t]*$//')  # trim whitespace
+            if [ -n "$keyword_array" ]; then
+                keyword_array="${keyword_array}, \"$keyword\""
+            else
+                keyword_array="\"$keyword\""
+            fi
+        done
+        keyword_field="[$keyword_array]"
+    else
+        keyword_field="[]"
+    fi
+
     cat > "$post_file" << POSTEOF
 ---
 title: "$title"
@@ -236,6 +285,7 @@ date: $current_date
 slug: $slug
 description: "$description"
 tags: [$tags]
+keywords: $keyword_field
 draft: true
 ---
 
@@ -319,6 +369,10 @@ create_hy_frontmatter() {
         tags="personal"
     fi
     
+    # Keywords (optional for SEO)
+    printf "${GREEN}Keywords${NC} ${GRAY}(optional, comma-separated for SEO - can be added later):${NC} "
+    read -r keywords
+    
     # Convert comma-separated tags to array format
     local tag_array=""
     IFS=',' read -ra tag_list <<< "$tags"
@@ -330,6 +384,20 @@ create_hy_frontmatter() {
             tag_array="\"$tag\""
         fi
     done
+    
+    # Convert comma-separated keywords to array format
+    local keyword_array=""
+    if [ -n "$keywords" ]; then
+        IFS=',' read -ra keyword_list <<< "$keywords"
+        for keyword in "${keyword_list[@]}"; do
+            keyword=$(echo "$keyword" | sed 's/^[ \t]*//;s/[ \t]*$//')  # trim whitespace
+            if [ -n "$keyword_array" ]; then
+                keyword_array="${keyword_array}, \"$keyword\""
+            else
+                keyword_array="\"$keyword\""
+            fi
+        done
+    fi
     
     # Create directory structure based on date and slug (like DSC)
     local hy_path="/Users/zire/matrix/github_zire/herbertyang.xyz"
@@ -346,6 +414,7 @@ create_hy_frontmatter() {
 title: $title
 date: $current_date
 tags: [$tag_array]
+keywords: [$keyword_array]
 draft: true
 EOF
     
