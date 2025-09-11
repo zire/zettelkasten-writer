@@ -342,10 +342,11 @@ get_hy_drafts() {
                 icon="🟢"
             fi
             
-            # Store with date for sorting: "date|title|word_count|icon|file_path"
-            temp_drafts+=("$creation_date|$title|$word_count|$icon|$file")
+            # Store with date for sorting: "date|title|word_count|icon|post_dir"
+            local post_dir=$(dirname "$file")
+            temp_drafts+=("$creation_date|$title|$word_count|$icon|$post_dir")
         fi
-    done < <(find "$hy_path/blog" -name "*.md" -print0 2>/dev/null)
+    done < <(find "$hy_path/docusaurus/blog" -name "index.md" -print0 2>/dev/null)
     
     # Sort by date (newest first) and add sequential numbers
     count=0
@@ -372,20 +373,24 @@ get_hy_completed() {
         local status_code="${line:0:2}"
         local filename="${line:3}"
         
-        # Check if it's a modified .md file in blog directory
-        if [[ "$filename" == blog/*.md && ("$status_code" == " M" || "$status_code" == "MM" || "$status_code" == "M " || "$status_code" == "A ") ]]; then
+        # Check if it's a modified index.md file in docusaurus/blog directory
+        if [[ "$filename" == docusaurus/blog/*/index.md && ("$status_code" == " M" || "$status_code" == "MM" || "$status_code" == "M " || "$status_code" == "A ") ]]; then
             modified_files+=("$hy_path/$filename")
         fi
     done < <(cd "$hy_path" && git status --porcelain 2>/dev/null)
     
-    # Handle untracked .md files
+    # Handle untracked directories that contain index.md files
     while IFS= read -r line; do
         local status_code="${line:0:2}"
         local filename="${line:3}"
         
-        # If it's an untracked .md file in blog directory
-        if [[ "$status_code" == "??" && "$filename" == blog/*.md ]]; then
-            modified_files+=("$hy_path/$filename")
+        # If it's an untracked directory, check for index.md files inside
+        if [[ "$status_code" == "??" && -d "$hy_path/$filename" && "$filename" == docusaurus/blog/* ]]; then
+            while IFS= read -r -d '' file; do
+                if [[ "$file" == *"/index.md" ]]; then
+                    modified_files+=("$file")
+                fi
+            done < <(find "$hy_path/$filename" -name "index.md" -print0 2>/dev/null)
         fi
     done < <(cd "$hy_path" && git status --porcelain 2>/dev/null)
     
@@ -406,8 +411,9 @@ get_hy_completed() {
             # Green checkmark for completed posts ready to publish
             local icon="✅"
             
-            # Store with date for sorting: "date|title|word_count|icon|file_path"
-            temp_completed+=("$creation_date|$title|$word_count|$icon|$file")
+            # Store with date for sorting: "date|title|word_count|icon|post_dir"
+            local post_dir=$(dirname "$file")
+            temp_completed+=("$creation_date|$title|$word_count|$icon|$post_dir")
         fi
     done
     
@@ -417,8 +423,8 @@ get_hy_completed() {
         while IFS= read -r line; do
             if [ -n "$line" ]; then
                 count=$((count + 1))
-                IFS='|' read -r date title word_count icon file_path <<< "$line"
-                completed+=("$count|$title|$date|$word_count|$icon|$file_path")
+                IFS='|' read -r date title word_count icon post_dir <<< "$line"
+                completed+=("$count|$title|$date|$word_count|$icon|$post_dir")
             fi
         done < <(printf '%s\n' "${temp_completed[@]}" | sort -r)
     fi
@@ -617,8 +623,8 @@ select_draft() {
             echo "$post_dir/index.md"
         elif [[ "$site_code" == "hy" ]]; then
             IFS='|' read -r num title date word_count icon post_dir <<< "$selected_draft"
-            # For HY site, the post_dir already contains the .md file path
-            echo "$post_dir"
+            # For HY site, post_dir now contains the folder path, need index.md
+            echo "$post_dir/index.md"
         fi
         return 0
     else
@@ -685,8 +691,8 @@ select_completed() {
             return 1
         fi
         if [[ "$site_code" == "hy" ]]; then
-            IFS='|' read -r num title date words icon file_path <<< "$selected_post"
-            echo "$file_path"
+            IFS='|' read -r num title date words icon post_dir <<< "$selected_post"
+            echo "$post_dir/index.md"
         else
             IFS='|' read -r num title date words icon post_dir <<< "$selected_post"
             echo "$post_dir/index.md"
@@ -759,8 +765,8 @@ select_draft_for_deletion() {
             IFS='|' read -r num title date words icon location_icon git_status_icon post_dir <<< "$selected_draft"
             local path_to_delete="$post_dir"
         elif [[ "$site_code" == "hy" ]]; then
-            IFS='|' read -r num title date words icon file_path <<< "$selected_draft"
-            local path_to_delete="$file_path"
+            IFS='|' read -r num title date words icon post_dir <<< "$selected_draft"
+            local path_to_delete="$post_dir"
         else
             IFS='|' read -r num title date words icon post_dir <<< "$selected_draft"
             local path_to_delete="$post_dir"

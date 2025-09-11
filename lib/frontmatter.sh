@@ -331,19 +331,20 @@ create_hy_frontmatter() {
         fi
     done
     
-    # Create directory structure based on date and slug
+    # Create directory structure based on date and slug (like DSC)
     local hy_path="/Users/zire/matrix/github_zire/herbertyang.xyz"
-    local post_file="$hy_path/blog/$current_date-$slug.md"
+    local year=$(echo "$current_date" | cut -d'-' -f1)
+    local post_dir="$hy_path/docusaurus/blog/$year/$current_date-$slug"
+    local post_file="$post_dir/index.md"
     
-    # Ensure blog directory exists
-    mkdir -p "$hy_path/blog"
+    # Ensure post directory exists
+    mkdir -p "$post_dir"
     
     # Create the post file with Docusaurus frontmatter
     cat > "$post_file" << EOF
 ---
 title: $title
 date: $current_date
-authors: [herbert]
 tags: [$tag_array]
 draft: true
 EOF
@@ -358,15 +359,11 @@ EOF
     cat >> "$post_file" << EOF
 ---
 
-## Introduction
 
-## Main Content
-
-## Conclusion
 
 ---
 
-*Originally published on [herbertyang.xyz](https://herbertyang.xyz)*
+*Originally published on [herbertyang.xyz/blog](https://herbertyang.xyz/blog)*
 EOF
     
     echo ""
@@ -376,7 +373,7 @@ EOF
     echo -e "${PURPLE}Next steps:${NC}"
     echo -e "  1. Write your content"
     echo -e "  2. Set ${YELLOW}draft: false${NC} when ready to publish"
-    echo -e "  3. Preview: cd $hy_path && npm start"
+    echo -e "  3. Preview: cd $hy_path/docusaurus && npm start"
     echo -e "  4. Publish when ready"
     
     # Return the post file path for opening in editor
