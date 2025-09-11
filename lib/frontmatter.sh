@@ -280,6 +280,111 @@ POSTEOF
     return 0
 }
 
+create_hy_frontmatter() {
+    echo -e "${BLUE}📝 Creating new post for Herbert Yang (Personal)${NC}"
+    echo ""
+    
+    # Title
+    printf "${GREEN}Title:${NC} "
+    read -r title
+    if [ -z "$title" ]; then
+        echo -e "${RED}Title is required.${NC}"
+        return 1
+    fi
+    
+    # Generate slug from title
+    local slug=$(echo "$title" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | sed 's/--*/-/g' | sed 's/^-\|-$//g')
+    printf "${GREEN}Slug${NC} ${GRAY}(auto-generated):${NC} $slug ${GRAY}[Enter to accept, or type new]:${NC} "
+    read -r custom_slug
+    if [ -n "$custom_slug" ]; then
+        slug="$custom_slug"
+    fi
+    
+    # Date (default to now)
+    local current_date=$(date +"%Y-%m-%d")
+    printf "${GREEN}Date${NC} ${GRAY}(YYYY-MM-DD, default: today):${NC} $current_date ${GRAY}[Enter to accept, or type new]:${NC} "
+    read -r custom_date
+    if [ -n "$custom_date" ]; then
+        current_date="$custom_date"
+    fi
+    
+    # Description
+    printf "${GREEN}Description${NC} ${GRAY}(brief summary, optional):${NC} "
+    read -r description
+    
+    # Tags (default: personal)
+    printf "${GREEN}Tags${NC} ${GRAY}(comma-separated, default: personal):${NC} "
+    read -r tags
+    if [ -z "$tags" ]; then
+        tags="personal"
+    fi
+    
+    # Convert comma-separated tags to array format
+    local tag_array=""
+    IFS=',' read -ra tag_list <<< "$tags"
+    for tag in "${tag_list[@]}"; do
+        tag=$(echo "$tag" | sed 's/^[ \t]*//;s/[ \t]*$//')  # trim whitespace
+        if [ -n "$tag_array" ]; then
+            tag_array="${tag_array}, \"$tag\""
+        else
+            tag_array="\"$tag\""
+        fi
+    done
+    
+    # Create directory structure based on date and slug
+    local hy_path="/Users/zire/matrix/github_zire/herbertyang.xyz"
+    local post_file="$hy_path/blog/$current_date-$slug.md"
+    
+    # Ensure blog directory exists
+    mkdir -p "$hy_path/blog"
+    
+    # Create the post file with Docusaurus frontmatter
+    cat > "$post_file" << EOF
+---
+title: $title
+date: $current_date
+authors: [herbert]
+tags: [$tag_array]
+draft: true
+EOF
+    
+    # Add description if provided
+    if [ -n "$description" ]; then
+        cat >> "$post_file" << EOF
+description: $description
+EOF
+    fi
+    
+    cat >> "$post_file" << EOF
+---
+
+## Introduction
+
+## Main Content
+
+## Conclusion
+
+---
+
+*Originally published on [herbertyang.xyz](https://herbertyang.xyz)*
+EOF
+    
+    echo ""
+    echo -e "${GREEN}✅ Post created successfully!${NC}"
+    echo -e "${BLUE}📝 File:${NC} $post_file"
+    echo ""
+    echo -e "${PURPLE}Next steps:${NC}"
+    echo -e "  1. Write your content"
+    echo -e "  2. Set ${YELLOW}draft: false${NC} when ready to publish"
+    echo -e "  3. Preview: cd $hy_path && npm start"
+    echo -e "  4. Publish when ready"
+    
+    # Return the post file path for opening in editor
+    POST_FILE_RESULT="$post_file"
+    return 0
+}
+
 # Export functions
 export -f create_dsc_frontmatter
 export -f create_sb_frontmatter
+export -f create_hy_frontmatter
