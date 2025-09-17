@@ -45,13 +45,33 @@ switch_to_writing_theme() {
 
 switch_to_coding_theme() {
     echo -e "${BLUE}🎨 Restoring coding theme...${NC}"
-    
-    # Restore backup settings
-    if [ -f "$CURSOR_SETTINGS_PATH.backup" ]; then
-        cp "$CURSOR_SETTINGS_PATH.backup" "$CURSOR_SETTINGS_PATH" 2>/dev/null || true
-        echo -e "${GREEN}✅ Coding theme restored${NC}"
+
+    # Use jq to restore Community Material Theme and remove writing customizations
+    if command -v jq > /dev/null 2>&1; then
+        # Restore Community Material Theme and remove writing-specific settings
+        jq '{
+            "window.commandCenter": true,
+            "workbench.colorTheme": "Community Material Theme",
+            "editor.accessibilitySupport": "on",
+            "extensions.ignoreRecommendations": true,
+            "cursor.composer.usageSummaryDisplay": "always",
+            "editor.fontFamily": "Fira Code, Menlo, Monaco, \"Courier New\", monospace",
+            "editor.fontSize": 14,
+            "editor.lineHeight": 1.4,
+            "editor.fontLigatures": true,
+            "terminal.integrated.fontFamily": "Fira Code, Menlo, Monaco, \"Courier New\", monospace"
+        }' "$CURSOR_SETTINGS_PATH" > "$CURSOR_SETTINGS_PATH.tmp" && mv "$CURSOR_SETTINGS_PATH.tmp" "$CURSOR_SETTINGS_PATH"
+        echo -e "${GREEN}✅ Community Material Theme restored${NC}"
     else
-        echo -e "${YELLOW}💡 Manually switch back to your preferred coding theme${NC}"
+        # Fallback: restore backup settings if available
+        if [ -f "$CURSOR_SETTINGS_PATH.backup" ]; then
+            cp "$CURSOR_SETTINGS_PATH.backup" "$CURSOR_SETTINGS_PATH" 2>/dev/null || true
+            echo -e "${GREEN}✅ Coding theme restored from backup${NC}"
+        else
+            # Simple sed fallback
+            sed -i '' 's/"workbench.colorTheme": "Quiet Light"/"workbench.colorTheme": "Community Material Theme"/g' "$CURSOR_SETTINGS_PATH" 2>/dev/null || true
+            echo -e "${YELLOW}💡 Theme switched back to Community Material Theme${NC}"
+        fi
     fi
 }
 

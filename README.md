@@ -10,7 +10,7 @@ Zettelkasten Writer is a centralized writing workflow that manages content creat
 
 ### 🌐 Multi-Site Management
 - Handle multiple websites from one interface
-- Currently supports Digital Sovereignty Chronicle (more sites coming soon)
+- Supports Digital Sovereignty Chronicle, The Sunday Blender, and Herbert Yang sites
 - Centralized configuration and workflow
 
 ### 📝 Interactive Menus
@@ -30,6 +30,14 @@ Zettelkasten Writer is a centralized writing workflow that manages content creat
 - Word count tracking and creation date display
 - Git-based detection for publish-ready posts (draft: false + uncommitted changes)
 
+### 🌿 **NEW: Enhanced Git Integration**
+- **Automatic git status checking** when selecting sites
+- **Smart branch management** - find existing draft branches or create new ones
+- **Auto-commit & push** with pre-canned commit messages
+- **Session-aware workflow** - commit progress or mark ready for publish
+- **Real-time change detection** for both tracked and untracked files
+- **Branch history display** showing recent branches with timestamps
+
 ### 🚀 One-Click Publishing
 - Automated git workflow with descriptive commits
 - Automatic deployment via existing CI/CD pipelines
@@ -44,27 +52,28 @@ Zettelkasten Writer is a centralized writing workflow that manages content creat
 
 ### 💾 Version Control
 - Git integration for all operations (create, edit, publish, delete)
-- Descriptive commit messages with metadata
+- Descriptive commit messages with Claude Code attribution
 - Proper handling of tracked and untracked files
 - Full history preservation for content lifecycle
 
 ## Supported Sites
 
 - **✅ Digital Sovereignty Chronicle** - Crypto, AI, and digital sovereignty insights
-- **🔄 The Sunday Blender** - Making news interesting for kids *(coming soon)*
-- **🔄 Herbert Yang (Personal)** - Personal blog and thoughts *(coming soon)*
+- **✅ The Sunday Blender** - Making news interesting for kids
+- **✅ Herbert Yang (Personal)** - Personal blog and thoughts
 - **🔄 Remnants of Globalization** - Newsletter about global changes *(coming soon)*
 
 ## Quick Start
 
 ```bash
-# Interactive writing session
+# Interactive writing session (with automatic git management)
 ./zwrite
 
 # Quick commands
 ./zwrite save "Post Title"     # Save draft progress to git
 ./zwrite publish "Post Title"  # Publish completed post
 ./zwrite status               # Show all drafts across sites
+./zwrite git [site]           # Check git status for specific site (dsc|sb|hy)
 ./zwrite help                 # Show all available commands
 ```
 
@@ -98,15 +107,19 @@ Zettelkasten Writer is a centralized writing workflow that manages content creat
 ### Complete Writing Lifecycle
 
 1. **Launch** - Run `./zwrite` from anywhere
-2. **Select Site** - Choose from your configured websites (currently DSC)
-3. **Choose Action**:
+2. **Select Site** - Choose from your configured websites with automatic git status check
+3. **Branch Management** - Automatically find existing draft branches or create new ones
+4. **Choose Action**:
    - **New post** (`n`) - Create with frontmatter wizard
    - **Edit draft** (`1-99`) - Direct number selection
    - **Publish** (`a-z`) - Direct letter selection for completed posts
    - **Delete draft** (`d`) - Safe removal with git history
-4. **Write in Cursor** - Automatic theme switching and layout setup
-5. **Manage Content** - Save progress, publish when ready
-6. **Version Control** - All changes tracked in git with descriptive commits
+5. **Write in Cursor** - Automatic theme switching and layout setup
+6. **Session Completion** - Enhanced options with automatic git operations:
+   - Save draft progress (auto-commit + push)
+   - Mark ready for publish (auto-commit + push)
+   - Continue writing (no git action)
+   - Manual git operations (for advanced users)
 
 ### Draft Status Flow
 
@@ -139,16 +152,23 @@ zwrite                    # Main orchestrator script
 │   ├── editor.sh        # Cursor integration and theme switching
 │   ├── publish.sh       # Git operations and publishing workflow
 │   ├── session.sh       # Session management and cleanup
+│   ├── git_manager.sh   # Enhanced git integration and automation
 │   └── themes.sh        # Theme switching functionality
 └── config/
     └── sites.json       # Multi-site configuration
 ```
 
-### Git Integration
-- **Draft progress**: Commits with word count and WIP status
-- **Publishing**: Commits with metadata (word count, images, categories)
-- **Deletion**: Proper `git rm` with history preservation
-- **All operations**: Descriptive commit messages with Claude Code attribution
+### Enhanced Git Integration
+- **Automatic git status checking** when selecting sites
+- **Smart branch detection** and management for draft workflows
+- **Real-time change detection** for both tracked and untracked files
+- **Auto-commit sessions** with standardized commit messages:
+  - `Draft progress: Article Title` for work-in-progress
+  - `Ready for publish: Article Title` for completed posts
+- **Automatic push to remote** with user confirmation
+- **Claude Code attribution** in all commit messages
+- **Branch history display** showing recent activity
+- **Session-aware workflow** that reduces manual git operations
 
 ## Requirements
 
@@ -187,7 +207,7 @@ The theme switching functionality modifies your Cursor `settings.json` temporari
 
 ### Command Line Interface
 ```bash
-# Interactive mode (recommended)
+# Interactive mode with git-aware workflow (recommended)
 ./zwrite
 
 # Quick draft saving
@@ -199,28 +219,44 @@ The theme switching functionality modifies your Cursor `settings.json` temporari
 # Status overview
 ./zwrite status
 
+# Git status checking
+./zwrite git dsc    # Check Digital Sovereignty Chronicle
+./zwrite git sb     # Check The Sunday Blender
+./zwrite git hy     # Check Herbert Yang site
+
 # Help
 ./zwrite help
 ```
 
-### Git Workflow Integration
-All operations create meaningful git commits:
+### Enhanced Git Workflow Integration
+All operations create meaningful git commits with Claude Code attribution:
 
 ```bash
-# Draft progress commits
-"Draft progress: Post Title (250 words)
-🚧 Work in progress - not ready for publication"
+# Draft progress commits (auto-generated during sessions)
+"Draft progress: Post Title
 
-# Publishing commits  
+🤖 Generated with Claude Code
+Co-Authored-By: Claude <noreply@anthropic.com>"
+
+# Ready for publish commits
+"Ready for publish: Post Title
+
+🤖 Generated with Claude Code
+Co-Authored-By: Claude <noreply@anthropic.com>"
+
+# Publishing commits (traditional workflow)
 "Publish: Post Title
 📝 1,200 words
 🖼️ 3 images
 🏷️ Technology"
-
-# Deletion commits
-"Delete draft: Post Title
-🗑️ Draft removed from version control"
 ```
+
+### Git Status Information
+When you select a site, zwriter automatically shows:
+- Current branch and recent branch history
+- Uncommitted changes (both tracked and untracked files)
+- Remote synchronization status (ahead/behind)
+- Available draft branches for switching
 
 ## Troubleshooting
 
