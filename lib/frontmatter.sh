@@ -111,6 +111,7 @@ draft: true
 description: "$description"
 categories:
   - "$category"
+images: [""]
 EOF
     
     # Add series if provided
@@ -286,6 +287,7 @@ slug: $slug
 description: "$description"
 tags: [$tags]
 keywords: $keyword_field
+images: [""]
 draft: true
 ---
 
