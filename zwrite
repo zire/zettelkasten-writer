@@ -10,10 +10,11 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Load all library functions
 source "$SCRIPT_DIR/lib/menu.sh"
-source "$SCRIPT_DIR/lib/frontmatter.sh"  
+source "$SCRIPT_DIR/lib/frontmatter.sh"
 source "$SCRIPT_DIR/lib/editor.sh"
 source "$SCRIPT_DIR/lib/publish.sh"
 source "$SCRIPT_DIR/lib/session.sh"
+source "$SCRIPT_DIR/lib/git_manager.sh"
 
 # Colors
 RED='\033[0;31m'
@@ -102,6 +103,15 @@ case "${1:-}" in
         get_dsc_drafts
         exit 0
         ;;
+    "git")
+        if [ -n "$2" ]; then
+            show_header
+            check_git_status "$2"
+        else
+            echo -e "${RED}Usage: $0 git [dsc|sb|hy]${NC}"
+        fi
+        exit 0
+        ;;
     "help"|"--help"|"-h")
         show_header
         echo -e "${BLUE}🔧 Quick Commands:${NC}"
@@ -109,6 +119,7 @@ case "${1:-}" in
         echo -e "  ${GREEN}$0 save${NC}           - Save draft progress (numbered menu)"
         echo -e "  ${GREEN}$0 publish \"Title\"${NC} - Publish completed post"
         echo -e "  ${GREEN}$0 status${NC}         - Show all drafts"
+        echo -e "  ${GREEN}$0 git [site]${NC}     - Check git status for site (dsc|sb|hy)"
         echo ""
         echo -e "${PURPLE}✨ Single-window workflow:${NC}"
         echo -e "  • Write in Cursor, save/publish from terminal session"
@@ -135,14 +146,17 @@ main_loop() {
                 1)
                     current_site="dsc"
                     site_name="Digital Sovereignty Chronicle"
+                    git_aware_site_selection "$current_site"
                     ;;
                 2)
                     current_site="sb"
                     site_name="The Sunday Blender"
+                    git_aware_site_selection "$current_site"
                     ;;
                 3)
                     current_site="hy"
                     site_name="Herbert Yang (Personal)"
+                    git_aware_site_selection "$current_site"
                     ;;
                 4)
                     echo -e "${YELLOW}⚠️  This site is coming soon!${NC}"
@@ -214,35 +228,7 @@ main_loop() {
                         if [ -f "$post_file" ]; then
                             open_in_cursor "$post_file"
                             show_writing_session_commands
-                            show_session_end_options "$post_file"
-                            read -r session_choice
-                            
-                            case "$session_choice" in
-                                s|save)
-                                    local title=$(grep 'title:' "$post_file" | sed 's/title: "//' | sed 's/"//' | head -1)
-                                    save_draft_progress "$title"
-                                    echo ""
-                                    echo -ne "${BLUE}Press any key to continue...${NC}"
-                                    read -r
-                                    end_writing_session
-                                    ;;
-                                p|publish)
-                                    local title=$(grep 'title:' "$post_file" | sed 's/title: "//' | sed 's/"//' | head -1)
-                                    publish_post "$title"
-                                    echo ""
-                                    echo -ne "${BLUE}Press any key to continue...${NC}"
-                                    read -r
-                                    end_writing_session
-                                    ;;
-                                c|continue)
-                                    echo -e "${BLUE}💡 Keep writing! Theme remains active.${NC}"
-                                    echo -ne "${BLUE}Press any key to continue...${NC}"
-                                    read -r
-                                    ;;
-                                q|quit|*)
-                                    end_writing_session
-                                    ;;
-                            esac
+                            enhanced_session_end "$post_file" "$current_site"
                         else
                             echo -e "${RED}❌ Could not find post file: $post_file${NC}"
                             echo -ne "${BLUE}Press any key to continue...${NC}"
@@ -380,35 +366,7 @@ main_loop() {
                             if [ -f "$post_file" ]; then
                                 open_in_cursor "$post_file"
                                 show_writing_session_commands
-                                show_session_end_options "$post_file"
-                                read -r session_choice
-                                
-                                case "$session_choice" in
-                                    s|save)
-                                        local title=$(grep 'title:' "$post_file" | sed 's/title: "//' | sed 's/"//' | head -1)
-                                        save_draft_progress "$title"
-                                        echo ""
-                                        echo -ne "${BLUE}Press any key to continue...${NC}"
-                                        read -r
-                                        end_writing_session
-                                        ;;
-                                    p|publish)
-                                        local title=$(grep 'title:' "$post_file" | sed 's/title: "//' | sed 's/"//' | head -1)
-                                        publish_post "$title"
-                                        echo ""
-                                        echo -ne "${BLUE}Press any key to continue...${NC}"
-                                        read -r
-                                        end_writing_session
-                                        ;;
-                                    c|continue)
-                                        echo -e "${BLUE}💡 Keep writing! Theme remains active.${NC}"
-                                        echo -ne "${BLUE}Press any key to continue...${NC}"
-                                        read -r
-                                        ;;
-                                    q|quit|*)
-                                        end_writing_session
-                                        ;;
-                                esac
+                                enhanced_session_end "$post_file" "$current_site"
                             else
                                 echo -e "${RED}❌ Could not find post file: $post_file${NC}"
                                 echo -ne "${BLUE}Press any key to continue...${NC}"
