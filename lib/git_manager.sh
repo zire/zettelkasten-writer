@@ -101,14 +101,7 @@ find_or_create_draft_branch() {
 
         case "$branch_choice" in
             1)
-                echo -ne "${BLUE}Enter branch name to switch to:${NC} "
-                read -r target_branch
-                git checkout "$target_branch" 2>/dev/null
-                if [ $? -eq 0 ]; then
-                    echo -e "${GREEN}✅ Switched to branch: $target_branch${NC}"
-                else
-                    echo -e "${RED}❌ Failed to switch to branch: $target_branch${NC}"
-                fi
+                switch_to_existing_branch
                 ;;
             2)
                 create_new_draft_branch "$site_code"
@@ -128,6 +121,57 @@ find_or_create_draft_branch() {
         if [ "$choice" = "1" ]; then
             create_new_draft_branch "$site_code"
         fi
+    fi
+}
+
+# Switch to existing branch with selection menu
+switch_to_existing_branch() {
+    echo ""
+    echo -e "${BLUE}🌿 Available branches:${NC}"
+    echo ""
+
+    # Get all local branches, exclude current branch
+    local current_branch=$(git branch --show-current)
+    local branches=($(git branch --format='%(refname:short)' | grep -v "^$current_branch$"))
+
+    if [ ${#branches[@]} -eq 0 ]; then
+        echo -e "${YELLOW}⚠️  No other branches available${NC}"
+        return 1
+    fi
+
+    # Display numbered list of branches with commit info
+    for i in "${!branches[@]}"; do
+        local branch="${branches[$i]}"
+        local last_commit=$(git log -1 --format="%cr" "$branch" 2>/dev/null)
+        echo -e "  ${GREEN}$((i+1)))${NC} $branch ${GRAY}($last_commit)${NC}"
+    done
+
+    echo ""
+    echo -e "  ${GREEN}q)${NC} Cancel"
+    echo ""
+    echo -ne "${BLUE}Select branch [1-${#branches[@]}, q]:${NC} "
+    read -r selection
+
+    # Handle selection
+    if [[ "$selection" == "q" ]]; then
+        echo -e "${BLUE}💡 Branch switch cancelled${NC}"
+        return 0
+    fi
+
+    # Validate numeric input
+    if [[ ! "$selection" =~ ^[0-9]+$ ]] || [ "$selection" -lt 1 ] || [ "$selection" -gt ${#branches[@]} ]; then
+        echo -e "${RED}❌ Invalid selection${NC}"
+        return 1
+    fi
+
+    # Switch to selected branch
+    local target_branch="${branches[$((selection-1))]}"
+    git checkout "$target_branch" 2>/dev/null
+    if [ $? -eq 0 ]; then
+        echo -e "${GREEN}✅ Switched to branch: $target_branch${NC}"
+    else
+        echo -e "${RED}❌ Failed to switch to branch: $target_branch${NC}"
+        return 1
     fi
 }
 
@@ -298,6 +342,7 @@ git_aware_site_selection() {
 export -f get_site_path
 export -f check_git_status
 export -f find_or_create_draft_branch
+export -f switch_to_existing_branch
 export -f create_new_draft_branch
 export -f auto_commit_session
 export -f enhanced_session_end
