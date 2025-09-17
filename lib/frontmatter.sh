@@ -7,6 +7,9 @@
 LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$LIB_DIR/previous_issues.sh"
 
+# Source DSC scanner for categories and series
+source "$LIB_DIR/dsc_scanner.sh"
+
 # Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -52,30 +55,11 @@ create_dsc_frontmatter() {
         description="Brief description of the post"
     fi
     
-    # Category
-    echo -e "${GREEN}Category${NC} ${GRAY}(choose from common options):${NC}"
-    echo -e "  1) crypto    2) ai         3) blockchain   4) web3"
-    echo -e "  5) defi      6) podcast    7) tech         8) digital-life"
-    printf "${GREEN}Choice [1-8] or type custom:${NC} "
-    read -r cat_choice
+    # Category - use scanner to get existing categories
+    local category=$(select_dsc_category)
     
-    local category="crypto" # default
-    case "$cat_choice" in
-        1) category="crypto" ;;
-        2) category="ai" ;;
-        3) category="blockchain" ;;
-        4) category="web3" ;;
-        5) category="defi" ;;
-        6) category="podcast" ;;
-        7) category="tech" ;;
-        8) category="digital-life" ;;
-        [0-9]*) category="crypto" ;; # invalid number, use default
-        *) if [ -n "$cat_choice" ]; then category="$cat_choice"; fi ;;
-    esac
-    
-    # Series (optional)
-    echo -e "${GREEN}Series${NC} ${GRAY}(optional - common: weekly-updates, deep-dive, crypto-101):${NC} "
-    read -r series
+    # Series (optional) - use scanner to get existing series
+    local series=$(select_dsc_series)
     
     # Keywords (optional for SEO)
     printf "${GREEN}Keywords${NC} ${GRAY}(optional, comma-separated for SEO - can be added later):${NC} "
