@@ -12,14 +12,14 @@ NC='\033[0m'
 CURSOR_SETTINGS_PATH="$HOME/Library/Application Support/Cursor/User/settings.json"
 
 switch_to_writing_theme() {
-    echo -e "${BLUE}🎨 Switching to paper writing theme...${NC}"
-    
+    echo -e "${BLUE}🎨 Switching to Quiet Light theme...${NC}"
+
     # Backup current settings
     cp "$CURSOR_SETTINGS_PATH" "$CURSOR_SETTINGS_PATH.backup" 2>/dev/null || true
-    
-    # Create writing theme settings using jq or sed
+
+    # Create writing theme settings using jq
     if command -v jq > /dev/null 2>&1; then
-        # Use jq for clean JSON modification
+        # Use jq for clean JSON modification - switch to Quiet Light with writing customizations
         jq '. + {
             "workbench.colorTheme": "Quiet Light",
             "editor.fontFamily": "Georgia, \"Times New Roman\", serif",
@@ -38,8 +38,8 @@ switch_to_writing_theme() {
         # Fallback: simple theme change using sed
         sed -i '' 's/"workbench.colorTheme": "Community Material Theme"/"workbench.colorTheme": "Quiet Light"/g' "$CURSOR_SETTINGS_PATH" 2>/dev/null || true
     fi
-    
-    echo -e "${GREEN}✅ Paper writing theme applied${NC}"
+
+    echo -e "${GREEN}✅ Quiet Light theme applied globally${NC}"
     echo -e "${YELLOW}💡 Restart Cursor or reload window (Cmd+R) to see changes${NC}"
 }
 
@@ -48,19 +48,13 @@ switch_to_coding_theme() {
 
     # Use jq to restore Community Material Theme and remove writing customizations
     if command -v jq > /dev/null 2>&1; then
-        # Restore Community Material Theme and remove writing-specific settings
-        jq '{
-            "window.commandCenter": true,
-            "workbench.colorTheme": "Community Material Theme",
-            "editor.accessibilitySupport": "on",
-            "extensions.ignoreRecommendations": true,
-            "cursor.composer.usageSummaryDisplay": "always",
-            "editor.fontFamily": "Fira Code, Menlo, Monaco, \"Courier New\", monospace",
-            "editor.fontSize": 14,
-            "editor.lineHeight": 1.4,
-            "editor.fontLigatures": true,
-            "terminal.integrated.fontFamily": "Fira Code, Menlo, Monaco, \"Courier New\", monospace"
-        }' "$CURSOR_SETTINGS_PATH" > "$CURSOR_SETTINGS_PATH.tmp" && mv "$CURSOR_SETTINGS_PATH.tmp" "$CURSOR_SETTINGS_PATH"
+        # Preserve existing settings but restore Community Material Theme and remove writing customizations
+        jq 'del(.workbench.colorCustomizations) |
+            .workbench.colorTheme = "Community Material Theme" |
+            .editor.fontFamily = "Fira Code, Menlo, Monaco, \"Courier New\", monospace" |
+            .editor.fontSize = 14 |
+            .editor.lineHeight = 1.4 |
+            .editor.fontLigatures = true' "$CURSOR_SETTINGS_PATH" > "$CURSOR_SETTINGS_PATH.tmp" && mv "$CURSOR_SETTINGS_PATH.tmp" "$CURSOR_SETTINGS_PATH"
         echo -e "${GREEN}✅ Community Material Theme restored${NC}"
     else
         # Fallback: restore backup settings if available
