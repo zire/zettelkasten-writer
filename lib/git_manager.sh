@@ -52,7 +52,7 @@ check_git_status() {
 
     # Current branch
     local current_branch=$(git branch --show-current 2>/dev/null)
-    echo -e "${GREEN}Current branch:${NC} $current_branch"
+    echo -e "${GREEN}Current branch:${NC} ${BOLD}${CYAN}$current_branch${NC}"
 
     # List recent branches (useful for finding drafts)
     echo -e "${GREEN}Recent branches:${NC}"

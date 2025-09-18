@@ -32,8 +32,8 @@ open_in_cursor() {
     
     # Check if Cursor is installed
     if command -v cursor > /dev/null 2>&1; then
-        # Open file in Cursor
-        cursor "$file_path"
+        # Open file in Cursor editor (not agent)
+        cursor editor "$file_path"
         
         # Give Cursor a moment to start
         sleep 2
@@ -42,17 +42,26 @@ open_in_cursor() {
         if [[ "$OSTYPE" == "darwin"* ]]; then
             osascript -e 'tell application "Cursor" to activate' 2>/dev/null || true
             sleep 1
-            
+
+            # Reload window to apply theme changes (Cmd+R)
+            osascript -e 'tell application "System Events" to keystroke "r" using {command down}' 2>/dev/null || true
+            sleep 1
+
             # Hide explorer panel (Cmd+Shift+E)
             osascript -e 'tell application "System Events" to keystroke "e" using {command down, shift down}' 2>/dev/null || true
             sleep 1
-            
-            # Split editor right (Cmd+\)
+
+            # Split editor to the right (Cmd+\)
             osascript -e 'tell application "System Events" to keystroke "\\" using {command down}' 2>/dev/null || true
             sleep 1
-            
+
             # Open markdown preview in the right pane (Cmd+Shift+V)
             osascript -e 'tell application "System Events" to keystroke "v" using {command down, shift down}' 2>/dev/null || true
+            sleep 1
+
+            # If preview opened below instead of to the side, close it and try again with split first
+            # Focus back to left pane first
+            osascript -e 'tell application "System Events" to keystroke "1" using {command down}' 2>/dev/null || true
         fi
         
         echo -e "${GREEN}✅ Cursor opened with side-by-side preview${NC}"

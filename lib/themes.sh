@@ -19,8 +19,8 @@ switch_to_writing_theme() {
 
     # Create writing theme settings using jq
     if command -v jq > /dev/null 2>&1; then
-        # Use jq for clean JSON modification - switch to Quiet Light with writing customizations
-        jq '. + {
+        # Use jq for clean JSON modification - remove duplicate keys and set Quiet Light with writing customizations
+        jq 'del(.workbench) | del(.editor) | . + {
             "workbench.colorTheme": "Quiet Light",
             "editor.fontFamily": "Georgia, \"Times New Roman\", serif",
             "editor.fontSize": 16,
