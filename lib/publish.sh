@@ -73,7 +73,7 @@ save_draft_progress() {
 Co-Authored-By: Claude <noreply@anthropic.com>"
         
         echo -e "${BLUE}📤 Pushing to remote...${NC}"
-        git push origin main
+        git push origin HEAD
         
         echo -e "${GREEN}✅ Draft progress saved successfully!${NC}"
         echo -e "${BLUE}📊 Word count: $word_count${NC}"
@@ -192,7 +192,7 @@ publish_post() {
 Co-Authored-By: Claude <noreply@anthropic.com>"
     
     echo -e "${BLUE}📤 Pushing to remote...${NC}"
-    git push origin main
+    git push origin HEAD
     
     echo -e "${GREEN}✅ Post published successfully!${NC}"
     echo -e "${GREEN}🚀 GitHub Actions will deploy automatically${NC}"
@@ -251,7 +251,7 @@ delete_draft() {
 Co-Authored-By: Claude <noreply@anthropic.com>"
         
         echo -e "${BLUE}📤 Pushing to remote...${NC}"
-        git push origin main
+        git push origin HEAD
         
         echo -e "${GREEN}✅ Draft deleted and changes pushed!${NC}"
     else
