@@ -219,7 +219,7 @@ create_sb_frontmatter() {
     local current_year=$(date +%Y)
     local current_month=$(date +%m) 
     local current_day=$(date +%d)
-    local post_dir="/Users/zire/matrix/github_zire/sundayblender/content/posts/$current_year/$current_month/$current_month$current_day-$slug"
+    local post_dir="/Users/zire/matrix/github_zire/sundayblender/content/posts/$current_year/$current_month$current_day"
     
     # Check if directory exists
     if [ -d "$post_dir" ]; then
