@@ -271,11 +271,10 @@ slug: $slug
 description: "$description"
 tags: [$tags]
 keywords: $keyword_field
+featured_image: ""
 images: [""]
 draft: true
 ---
-
-![Hero Image]()
 
 ## Tech
 
